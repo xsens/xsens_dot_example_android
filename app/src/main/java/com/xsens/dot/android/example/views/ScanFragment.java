@@ -42,7 +42,8 @@ import android.view.ViewGroup;
 
 import com.xsens.dot.android.example.R;
 import com.xsens.dot.android.example.adapters.ScanAdapter;
-import com.xsens.dot.android.example.databinding.FragmentScannerBinding;
+import com.xsens.dot.android.example.databinding.FragmentScanBinding;
+import com.xsens.dot.android.example.interfaces.SensorClickInterface;
 import com.xsens.dot.android.example.viewmodels.BluetoothViewModel;
 import com.xsens.dot.android.sdk.interfaces.XsensDotScannerCb;
 import com.xsens.dot.android.sdk.utils.XsensDotScanner;
@@ -56,20 +57,21 @@ import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-public class ScanFragment extends Fragment implements XsensDotScannerCb {
+public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorClickInterface {
 
     private static final String TAG = ScanFragment.class.getSimpleName();
 
-    private FragmentScannerBinding mBinding;
+    private FragmentScanBinding mBinding;
     private BluetoothViewModel mBluetoothViewModel;
 
-    private ScanAdapter mScannerAdapter;
+    private ScanAdapter mScanAdapter;
     private ArrayList<BluetoothDevice> mScannedSensorList = new ArrayList<>();
 
     private XsensDotScanner mXsDotScanner;
     private boolean mIsScanning = false;
 
     public static ScanFragment newInstance() {
+
         return new ScanFragment();
     }
 
@@ -87,7 +89,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb {
 
         super.onCreateView(inflater, container, savedInstanceState);
 
-        mBinding = FragmentScannerBinding.inflate(LayoutInflater.from(getContext()));
+        mBinding = FragmentScanBinding.inflate(LayoutInflater.from(getContext()));
         return mBinding.getRoot();
     }
 
@@ -96,10 +98,11 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb {
 
         super.onActivityCreated(savedInstanceState);
 
-        mScannerAdapter = new ScanAdapter(mScannedSensorList);
+        mScanAdapter = new ScanAdapter(mScannedSensorList);
+        mScanAdapter.setSensorClickListener(this);
         mBinding.sensorRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mBinding.sensorRecyclerView.setItemAnimator(new DefaultItemAnimator());
-        mBinding.sensorRecyclerView.setAdapter(mScannerAdapter);
+        mBinding.sensorRecyclerView.setAdapter(mScanAdapter);
 
         mBinding.scanButton.setOnClickListener(new View.OnClickListener() {
 
@@ -109,7 +112,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb {
                 if (!mIsScanning) {
 
                     mScannedSensorList.clear();
-                    mScannerAdapter.notifyDataSetChanged();
+                    mScanAdapter.notifyDataSetChanged();
 
                     mIsScanning = mXsDotScanner.startScan();
 
@@ -132,6 +135,11 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb {
     }
 
     @Override
+    public void onSensorClick(View v, int position) {
+
+    }
+
+    @Override
     public void onXsensDotScanned(BluetoothDevice device) {
 
         Log.i(TAG, "onXsensDotScanned() - Name: " + device.getName() + ", Address: " + device.getAddress());
@@ -141,7 +149,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb {
             if (!mScannedSensorList.contains(device)) {
 
                 mScannedSensorList.add(device);
-                mScannerAdapter.notifyItemInserted(mScannedSensorList.size() - 1);
+                mScanAdapter.notifyItemInserted(mScannedSensorList.size() - 1);
             }
         }
     }

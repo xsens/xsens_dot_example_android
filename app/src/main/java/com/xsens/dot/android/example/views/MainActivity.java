@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void addFragments(Fragment fragment) {
+    private void addFragment(Fragment fragment) {
 
         getSupportFragmentManager().beginTransaction().replace(R.id.container, fragment).addToBackStack(null).commit();
     }

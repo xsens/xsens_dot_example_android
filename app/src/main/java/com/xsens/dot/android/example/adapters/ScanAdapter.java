@@ -38,52 +38,71 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.xsens.dot.android.example.R;
+import com.xsens.dot.android.example.interfaces.SensorClickInterface;
 
 import java.util.ArrayList;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScannerViewHolder> {
+public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder> {
 
-    private ArrayList<BluetoothDevice> mScannedSensorList;
+    private SensorClickInterface mListener;
+    private ArrayList<BluetoothDevice> mSensorList;
 
     public ScanAdapter(ArrayList<BluetoothDevice> scannedSensorList) {
-        mScannedSensorList = scannedSensorList;
+
+        mSensorList = scannedSensorList;
     }
 
     @NonNull
     @Override
-    public ScanAdapter.ScannerViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_scanner, parent, false);
+    public ScanViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
-        return new ScannerViewHolder(v);
+        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_sensor, parent, false);
+        return new ScanViewHolder(itemView);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ScannerViewHolder holder, int position) {
-        holder.sensorName.setText(mScannedSensorList.get(position).getName());
-        holder.sensorMacAddress.setText(mScannedSensorList.get(position).getAddress());
+    public void onBindViewHolder(@NonNull ScanViewHolder holder, final int position) {
+
+        holder.sensorName.setText(mSensorList.get(position).getName());
+        holder.sensorMacAddress.setText(mSensorList.get(position).getAddress());
 
         holder.rootView.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View v) {
-                // TODO
+
+                if (mListener != null) mListener.onSensorClick(v, position);
             }
         });
     }
 
     @Override
     public int getItemCount() {
-        return mScannedSensorList == null ? 0 : mScannedSensorList.size();
+
+        return mSensorList == null ? 0 : mSensorList.size();
     }
 
-    static class ScannerViewHolder extends RecyclerView.ViewHolder {
+    public BluetoothDevice getItem(int position) {
+
+        return mSensorList == null ? null : mSensorList.get(position);
+    }
+
+    public void setSensorClickListener(SensorClickInterface listener) {
+
+        mListener = listener;
+    }
+
+    static class ScanViewHolder extends RecyclerView.ViewHolder {
+
         View rootView;
         TextView sensorName;
         TextView sensorMacAddress;
 
-        ScannerViewHolder(View v) {
+        ScanViewHolder(View v) {
+
             super(v);
 
             rootView = v;
@@ -91,5 +110,4 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScannerViewHol
             sensorMacAddress = v.findViewById(R.id.sensor_mac_address);
         }
     }
-
 }
