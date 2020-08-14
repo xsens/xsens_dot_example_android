@@ -29,59 +29,39 @@
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
 
-package com.xsens.dot.android.example.utils;
+package com.xsens.dot.android.example.apps;
 
-import android.Manifest;
-import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothManager;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.app.Application;
+import android.util.Log;
+
+import com.xsens.dot.android.sdk.XsensDotSdk;
 
 /**
- * This class is for some additional feature, such as: check Bluetooth adapter, check location premission...etc.
+ * Customize an application class for basic initialization.
  */
-public class Utils {
+public class XsensDotApplication extends Application {
 
-    /**
-     * Check the Bluetooth adapter is enabled or not.
-     *
-     * @param context The application context
-     * @return True - if the Bluetooth adapter is on
-     */
-    public static boolean isBluetoothAdapterEnabled(Context context) {
+    private static final String TAG = XsensDotApplication.class.getSimpleName();
 
-        BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+    @Override
+    public void onCreate() {
 
-        if (bluetoothManager != null) {
+        super.onCreate();
 
-            BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
-            if (bluetoothAdapter != null) return bluetoothAdapter.isEnabled();
-        }
-
-        return false;
-    }
-
-    public static void requestEnableBluetooth(Activity activity, int requestCode) {
-
-        Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        activity.startActivityForResult(intent, requestCode);
+        initXsensDotSdk();
     }
 
     /**
-     * Above Android 6.0+, user have to  allow app to access location information then scan BLE device.
-     *
-     * @param activity The activity class
-     * @return True - if the permission is granted
+     * Setup for Xsens DOT Sdk.
      */
-    public static boolean isLocationPermissionGranted(Activity activity) {
+    private void initXsensDotSdk() {
 
-        return activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-    }
+        String version = XsensDotSdk.getSdkVersion();
+        Log.i(TAG, "initXsensDotSdk() - version: " + version);
 
-    public static void requestLocationPermission(Activity activity, int requestCode) {
-
-        activity.requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, requestCode);
+        // Enable this feature to monitor logs from SDK.
+        XsensDotSdk.setDebugEnabled(true);
+        // Enable this feature then SDK will start reconnection when the connection is lost.
+        XsensDotSdk.setReconnectEnabled(true);
     }
 }

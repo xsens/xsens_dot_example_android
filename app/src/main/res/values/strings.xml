@@ -1,3 +1,9 @@
 <resources>
-    <string name="app_name">XsensDotExample</string>
+    <string name="app_name">Xsens DOT Example</string>
+
+    <string name="hint_turn_on_bluetooth">Please turn on the Bluetooth adapter</string>
+    <string name="hint_allow_location">Please allow location permission to use sensor(s)</string>
+
+    <string name="start_scan">Start Scanning</string>
+    <string name="stop_scan">Stop Scanning</string>
 </resources>

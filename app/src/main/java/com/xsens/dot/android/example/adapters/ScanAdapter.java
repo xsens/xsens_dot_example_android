@@ -29,59 +29,67 @@
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
 
-package com.xsens.dot.android.example.utils;
+package com.xsens.dot.android.example.adapters;
 
-import android.Manifest;
-import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothManager;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.bluetooth.BluetoothDevice;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
 
-/**
- * This class is for some additional feature, such as: check Bluetooth adapter, check location premission...etc.
- */
-public class Utils {
+import com.xsens.dot.android.example.R;
 
-    /**
-     * Check the Bluetooth adapter is enabled or not.
-     *
-     * @param context The application context
-     * @return True - if the Bluetooth adapter is on
-     */
-    public static boolean isBluetoothAdapterEnabled(Context context) {
+import java.util.ArrayList;
 
-        BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
-        if (bluetoothManager != null) {
+public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScannerViewHolder> {
 
-            BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
-            if (bluetoothAdapter != null) return bluetoothAdapter.isEnabled();
+    private ArrayList<BluetoothDevice> mScannedSensorList;
+
+    public ScanAdapter(ArrayList<BluetoothDevice> scannedSensorList) {
+        mScannedSensorList = scannedSensorList;
+    }
+
+    @NonNull
+    @Override
+    public ScanAdapter.ScannerViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item_scanner, parent, false);
+
+        return new ScannerViewHolder(v);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ScannerViewHolder holder, int position) {
+        holder.sensorName.setText(mScannedSensorList.get(position).getName());
+        holder.sensorMacAddress.setText(mScannedSensorList.get(position).getAddress());
+
+        holder.rootView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO
+            }
+        });
+    }
+
+    @Override
+    public int getItemCount() {
+        return mScannedSensorList == null ? 0 : mScannedSensorList.size();
+    }
+
+    static class ScannerViewHolder extends RecyclerView.ViewHolder {
+        View rootView;
+        TextView sensorName;
+        TextView sensorMacAddress;
+
+        ScannerViewHolder(View v) {
+            super(v);
+
+            rootView = v;
+            sensorName = v.findViewById(R.id.sensor_name);
+            sensorMacAddress = v.findViewById(R.id.sensor_mac_address);
         }
-
-        return false;
     }
 
-    public static void requestEnableBluetooth(Activity activity, int requestCode) {
-
-        Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        activity.startActivityForResult(intent, requestCode);
-    }
-
-    /**
-     * Above Android 6.0+, user have to  allow app to access location information then scan BLE device.
-     *
-     * @param activity The activity class
-     * @return True - if the permission is granted
-     */
-    public static boolean isLocationPermissionGranted(Activity activity) {
-
-        return activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    public static void requestLocationPermission(Activity activity, int requestCode) {
-
-        activity.requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, requestCode);
-    }
 }
