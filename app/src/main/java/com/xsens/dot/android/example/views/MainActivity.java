@@ -41,10 +41,13 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.xsens.dot.android.example.R;
 import com.xsens.dot.android.example.databinding.ActivityMainBinding;
+import com.xsens.dot.android.example.interfaces.ScanClickInterface;
 import com.xsens.dot.android.example.utils.Utils;
 import com.xsens.dot.android.example.viewmodels.BluetoothViewModel;
 
@@ -53,6 +56,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.Observer;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -64,6 +68,9 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding mBinding;
     private BluetoothViewModel mBluetoothViewModel;
 
+    private boolean mIsScanning = false;
+    private ScanClickInterface mScanListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -73,8 +80,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(mBinding.getRoot());
 
         setupContainer();
+        bindViewModel();
+        checkBluetoothAndPermission();
 
-        mBluetoothViewModel = BluetoothViewModel.getInstance(this);
         registerReceiver(mBluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
     }
 
@@ -83,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
 
         super.onPostResume();
 
-        checkBluetoothAndPermission();
+        bindViewModel();
     }
 
     @Override
@@ -137,6 +145,48 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+
+        MenuItem scanItem = menu.findItem(R.id.action_scan);
+
+        if (mIsScanning) scanItem.setTitle(getString(R.string.menu_stop_scan));
+        else scanItem.setTitle(getString(R.string.menu_start_scan));
+
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+
+        switch (id) {
+
+            case R.id.action_scan:
+
+                if (mScanListener != null && checkBluetoothAndPermission()) {
+
+                    if (mIsScanning) mScanListener.onScanTriggered(false);
+                    else mScanListener.onScanTriggered(true);
+                }
+                break;
+
+            case R.id.action_measure:
+
+                break;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
     private void setupContainer() {
 
         if (null != getIntent()) {
@@ -154,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Check the state of Bluetooth adapter and location permission.
      */
-    private void checkBluetoothAndPermission() {
+    private boolean checkBluetoothAndPermission() {
 
         boolean isBluetoothEnabled = Utils.isBluetoothAdapterEnabled(this);
         boolean isPermissionGranted = Utils.isLocationPermissionGranted(this);
@@ -165,9 +215,31 @@ public class MainActivity extends AppCompatActivity {
             Utils.requestEnableBluetooth(this, REQUEST_ENABLE_BLUETOOTH);
         }
 
-        Log.i(TAG, "checkBluetoothAndPermission() - " + isBluetoothEnabled + ", " + isPermissionGranted);
+        boolean state = isBluetoothEnabled && isPermissionGranted;
+        Log.i(TAG, "checkBluetoothAndPermission() - " + state);
 
-        mBluetoothViewModel.updateBluetoothEnableState(isBluetoothEnabled && isPermissionGranted);
+        mBluetoothViewModel.updateBluetoothEnableState(state);
+        return state;
+    }
+
+    private void bindViewModel() {
+
+        mBluetoothViewModel = BluetoothViewModel.getInstance(this);
+
+        mBluetoothViewModel.isScanning().observe(this, new Observer<Boolean>() {
+
+            @Override
+            public void onChanged(Boolean scanning) {
+
+                mIsScanning = scanning;
+                invalidateOptionsMenu();
+            }
+        });
+    }
+
+    public void setScanTriggerListener(ScanClickInterface listener) {
+
+        mScanListener = listener;
     }
 
     private final BroadcastReceiver mBluetoothStateReceiver = new BroadcastReceiver() {

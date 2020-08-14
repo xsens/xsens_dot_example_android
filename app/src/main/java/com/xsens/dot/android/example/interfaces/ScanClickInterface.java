@@ -29,43 +29,9 @@
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
 
-package com.xsens.dot.android.example.viewmodels;
+package com.xsens.dot.android.example.interfaces;
 
-import androidx.annotation.NonNull;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelStoreOwner;
+public interface ScanClickInterface {
 
-public class BluetoothViewModel extends ViewModel {
-
-    private static final String TAG = BluetoothViewModel.class.getSimpleName();
-
-    public static BluetoothViewModel getInstance(@NonNull ViewModelStoreOwner owner) {
-
-        return new ViewModelProvider(owner, new ViewModelProvider.NewInstanceFactory()).get(BluetoothViewModel.class);
-    }
-
-    private MutableLiveData<Boolean> isBluetoothEnabled = new MutableLiveData<>();
-    private MutableLiveData<Boolean> isScanning = new MutableLiveData<>();
-
-    public MutableLiveData<Boolean> isBluetoothEnabled() {
-
-        return isBluetoothEnabled;
-    }
-
-    public void updateBluetoothEnableState(boolean enabled) {
-
-        isBluetoothEnabled.postValue(enabled);
-    }
-
-    public MutableLiveData<Boolean> isScanning() {
-
-        return isScanning;
-    }
-
-    public void updateScanState(boolean scanning) {
-
-        isScanning.postValue(scanning);
-    }
+    void onScanTriggered(boolean started);
 }

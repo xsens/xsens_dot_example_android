@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.xsens.dot.android.example.views.MainActivity">
+
+    <item
+        android:id="@+id/action_scan"
+        android:orderInCategory="0"
+        app:showAsAction="ifRoom"
+        android:title="@string/menu_stop_scan"/>
+
+    <item
+        android:id="@+id/action_measure"
+        android:orderInCategory="1"
+        android:title="@string/menu_measure"
+        app:showAsAction="never" />
+</menu>

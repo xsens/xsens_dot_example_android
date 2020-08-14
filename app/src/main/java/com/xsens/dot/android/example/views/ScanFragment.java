@@ -40,11 +40,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.xsens.dot.android.example.R;
 import com.xsens.dot.android.example.adapters.ScanAdapter;
 import com.xsens.dot.android.example.databinding.FragmentScanBinding;
+import com.xsens.dot.android.example.interfaces.ScanClickInterface;
 import com.xsens.dot.android.example.interfaces.SensorClickInterface;
 import com.xsens.dot.android.example.viewmodels.BluetoothViewModel;
+import com.xsens.dot.android.example.viewmodels.SensorViewModel;
 import com.xsens.dot.android.sdk.interfaces.XsensDotScannerCb;
 import com.xsens.dot.android.sdk.utils.XsensDotScanner;
 
@@ -57,12 +58,13 @@ import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorClickInterface {
+public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorClickInterface, ScanClickInterface {
 
     private static final String TAG = ScanFragment.class.getSimpleName();
 
     private FragmentScanBinding mBinding;
     private BluetoothViewModel mBluetoothViewModel;
+    private SensorViewModel mSensorViewModel;
 
     private ScanAdapter mScanAdapter;
     private ArrayList<BluetoothDevice> mScannedSensorList = new ArrayList<>();
@@ -104,26 +106,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
         mBinding.sensorRecyclerView.setItemAnimator(new DefaultItemAnimator());
         mBinding.sensorRecyclerView.setAdapter(mScanAdapter);
 
-        mBinding.scanButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-
-                if (!mIsScanning) {
-
-                    mScannedSensorList.clear();
-                    mScanAdapter.notifyDataSetChanged();
-
-                    mIsScanning = mXsDotScanner.startScan();
-
-                } else {
-                    // If success for stopping, it will return True from SDK. So use !(not) here.
-                    mIsScanning = !mXsDotScanner.stopScan();
-                }
-
-                mBinding.scanButton.setText(mIsScanning ? getString(R.string.stop_scan) : getString(R.string.start_scan));
-            }
-        });
+        if (getActivity() != null) ((MainActivity) getActivity()).setScanTriggerListener(this);
     }
 
     @Override
@@ -132,11 +115,25 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
         super.onDestroy();
 
         if (mXsDotScanner != null) mXsDotScanner.stopScan();
+        mSensorViewModel.disconnectAllSensors();
     }
 
     @Override
-    public void onSensorClick(View v, int position) {
+    public void onScanTriggered(boolean triggered) {
 
+        if (triggered) {
+
+            mScannedSensorList.clear();
+            mScanAdapter.notifyDataSetChanged();
+
+            mIsScanning = mXsDotScanner.startScan();
+
+        } else {
+            // If success for stopping, it will return True from SDK. So use !(not) here.
+            mIsScanning = !mXsDotScanner.stopScan();
+        }
+
+        mBluetoothViewModel.updateScanState(mIsScanning);
     }
 
     @Override
@@ -154,11 +151,27 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
         }
     }
 
+    @Override
+    public void onSensorClick(View v, int position) {
+
+        mIsScanning = !mXsDotScanner.stopScan();
+        mBluetoothViewModel.updateScanState(false);
+
+        BluetoothDevice device = mScanAdapter.getItem(position);
+
+        if (device != null) {
+
+            // TODO: 2020/8/14 Popup a syncing dialog.
+            mSensorViewModel.connectSensor(getContext(), device);
+        }
+    }
+
     private void bindViewModel() {
 
         if (getActivity() != null) {
 
             mBluetoothViewModel = BluetoothViewModel.getInstance(getActivity());
+            mSensorViewModel = SensorViewModel.getInstance(getActivity());
 
             mBluetoothViewModel.isBluetoothEnabled().observe(this, new Observer<Boolean>() {
 
@@ -167,11 +180,12 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
 
                     Log.d(TAG, "isBluetoothEnabled = " + enabled);
 
-                    if (enabled) initXsDotScanner();
-                    else mIsScanning = false;
-
-                    mBinding.scanButton.setEnabled(enabled);
-                    mBinding.scanButton.setText(enabled ? getString(R.string.start_scan) : getString(R.string.stop_scan));
+                    if (enabled) {
+                        initXsDotScanner();
+                    } else {
+                        mIsScanning = false;
+                        mBluetoothViewModel.updateScanState(false);
+                    }
                 }
             });
         }
