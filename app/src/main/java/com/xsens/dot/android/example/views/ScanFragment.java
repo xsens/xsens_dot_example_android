@@ -31,6 +31,7 @@
 
 package com.xsens.dot.android.example.views;
 
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
@@ -40,6 +41,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.xsens.dot.android.example.R;
 import com.xsens.dot.android.example.adapters.ScanAdapter;
 import com.xsens.dot.android.example.databinding.FragmentScanBinding;
 import com.xsens.dot.android.example.interfaces.ScanClickInterface;
@@ -47,6 +49,7 @@ import com.xsens.dot.android.example.interfaces.SensorClickInterface;
 import com.xsens.dot.android.example.viewmodels.BluetoothViewModel;
 import com.xsens.dot.android.example.viewmodels.SensorViewModel;
 import com.xsens.dot.android.sdk.interfaces.XsensDotScannerCb;
+import com.xsens.dot.android.sdk.models.XsensDotDevice;
 import com.xsens.dot.android.sdk.utils.XsensDotScanner;
 
 import java.util.ArrayList;
@@ -57,6 +60,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
+
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
 
 public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorClickInterface, ScanClickInterface {
 
@@ -71,6 +77,8 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
 
     private XsensDotScanner mXsDotScanner;
     private boolean mIsScanning = false;
+
+    private AlertDialog mConnectionDialog;
 
     public static ScanFragment newInstance() {
 
@@ -105,6 +113,12 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
         mBinding.sensorRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mBinding.sensorRecyclerView.setItemAnimator(new DefaultItemAnimator());
         mBinding.sensorRecyclerView.setAdapter(mScanAdapter);
+
+        AlertDialog.Builder connectionDialogBuilder = new AlertDialog.Builder(getActivity());
+        connectionDialogBuilder.setTitle(getString(R.string.connecting));
+        connectionDialogBuilder.setMessage(getString(R.string.hint_connecting));
+        connectionDialogBuilder.setCancelable(false);
+        mConnectionDialog = connectionDialogBuilder.create();
 
         if (getActivity() != null) ((MainActivity) getActivity()).setScanTriggerListener(this);
     }
@@ -158,10 +172,25 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
         mBluetoothViewModel.updateScanState(false);
 
         BluetoothDevice device = mScanAdapter.getItem(position);
+        XsensDotDevice xsDevice = mSensorViewModel.getSensor(device.getAddress());
 
-        if (device != null) {
+        if (xsDevice != null) {
 
-            // TODO: 2020/8/14 Popup a syncing dialog.
+            final int state = xsDevice.getConnectionState();
+
+            if (state == CONN_STATE_DISCONNECTED) {
+
+                mConnectionDialog.show();
+                mSensorViewModel.connectSensor(getContext(), device);
+
+            } else  {
+
+                mSensorViewModel.disconnectSensor(device.getAddress());
+            }
+
+        } else {
+
+            mConnectionDialog.show();
             mSensorViewModel.connectSensor(getContext(), device);
         }
     }
@@ -189,6 +218,26 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
                 }
             });
         }
+
+        mSensorViewModel.getConnectionUpdatedDevice().observe(this, new Observer<XsensDotDevice>() {
+
+            @Override
+            public void onChanged(XsensDotDevice device) {
+
+                String address = device.getAddress();
+                int state = device.getConnectionState();
+                Log.d(TAG, "getConnectionUpdatedDevice() - address = " + address + ", state = " + state);
+
+                // TODO: 2020/8/18 Update connection state for each item.
+
+                switch (state) {
+
+                    case CONN_STATE_CONNECTED:
+                        if (mConnectionDialog.isShowing()) mConnectionDialog.dismiss();
+                        break;
+                }
+            }
+        });
     }
 
     private void initXsDotScanner() {

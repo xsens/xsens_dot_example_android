@@ -47,6 +47,8 @@ import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStoreOwner;
 
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
+
 public class SensorViewModel extends ViewModel implements XsensDotDeviceCb {
 
     private static final String TAG = SensorViewModel.class.getSimpleName();
@@ -57,14 +59,28 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCb {
     }
 
     private MutableLiveData<ArrayList<XsensDotDevice>> mSensorList = new MutableLiveData<>();
+    private MutableLiveData<XsensDotDevice> mConnectionUpdatedSensor = new MutableLiveData<>();
+
+    public XsensDotDevice getSensor(String address) {
+
+        final ArrayList<XsensDotDevice> list = mSensorList.getValue();
+
+        if (list != null) {
+
+            for (XsensDotDevice device : list) {
+
+                if (device.getAddress().equals(address)) return device;
+            }
+        }
+
+        return null;
+    }
 
     public void connectSensor(Context context, BluetoothDevice device) {
 
         XsensDotDevice xsDevice = new XsensDotDevice(context, device, this);
         xsDevice.connect();
-
-        if (mSensorList.getValue() == null) mSensorList.setValue(new ArrayList<XsensDotDevice>());
-        mSensorList.getValue().add(xsDevice);
+        addDevice(xsDevice);
     }
 
     public void disconnectSensor(String address) {
@@ -93,10 +109,68 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCb {
         }
     }
 
+    private void addDevice(XsensDotDevice xsDevice) {
+
+        if (mSensorList.getValue() == null) mSensorList.setValue(new ArrayList<XsensDotDevice>());
+
+        final ArrayList<XsensDotDevice> list = mSensorList.getValue();
+        boolean isExist = false;
+
+        for (XsensDotDevice _xsDevice : list) {
+
+            if (xsDevice.getAddress().equals(_xsDevice.getAddress())) {
+
+                isExist = true;
+                break;
+            }
+        }
+
+        if (!isExist) list.add(xsDevice);
+    }
+
+    private void removeDevice(String address) {
+
+        if (mSensorList.getValue() == null) {
+
+            mSensorList.setValue(new ArrayList<XsensDotDevice>());
+            return;
+        }
+
+        final ArrayList<XsensDotDevice> list = mSensorList.getValue();
+        final XsensDotDevice xsDevice = getSensor(address);
+
+        if (xsDevice != null) {
+
+            for (XsensDotDevice _xsDevice : list) {
+
+                if (xsDevice.getAddress().equals(_xsDevice.getAddress())) {
+
+                    list.remove(_xsDevice);
+                    break;
+                }
+            }
+        }
+    }
+
+    public MutableLiveData<XsensDotDevice> getConnectionUpdatedDevice() {
+
+        return mConnectionUpdatedSensor;
+    }
+
     @Override
     public void onXsensDotConnectionChanged(String address, int state) {
 
         Log.i(TAG, "onXsensDotConnectionChanged() - address = " + address + ", state = " + state);
+
+        final XsensDotDevice xsDevice = getSensor(address);
+        if (xsDevice != null) mConnectionUpdatedSensor.postValue(xsDevice);
+
+        switch (state) {
+
+            case CONN_STATE_DISCONNECTED:
+                removeDevice(address);
+                break;
+        }
     }
 
     @Override

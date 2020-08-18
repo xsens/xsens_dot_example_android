@@ -215,11 +215,11 @@ public class MainActivity extends AppCompatActivity {
             Utils.requestEnableBluetooth(this, REQUEST_ENABLE_BLUETOOTH);
         }
 
-        boolean state = isBluetoothEnabled && isPermissionGranted;
-        Log.i(TAG, "checkBluetoothAndPermission() - " + state);
+        boolean status = isBluetoothEnabled && isPermissionGranted;
+        Log.i(TAG, "checkBluetoothAndPermission() - " + status);
 
-        mBluetoothViewModel.updateBluetoothEnableState(state);
-        return state;
+        mBluetoothViewModel.updateBluetoothEnableState(status);
+        return status;
     }
 
     private void bindViewModel() {
