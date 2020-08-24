@@ -36,7 +36,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.xsens.dot.android.sdk.events.XsensDotData;
-import com.xsens.dot.android.sdk.interfaces.XsensDotDeviceCb;
+import com.xsens.dot.android.sdk.interfaces.XsensDotDeviceCallback;
 import com.xsens.dot.android.sdk.models.XsensDotDevice;
 
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ import androidx.lifecycle.ViewModelStoreOwner;
 
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
 
-public class SensorViewModel extends ViewModel implements XsensDotDeviceCb {
+public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback {
 
     private static final String TAG = SensorViewModel.class.getSimpleName();
 
@@ -186,6 +186,11 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCb {
     }
 
     @Override
+    public void onXsensDotInitDone(String s) {
+
+    }
+
+    @Override
     public void onXsensDotTagChanged(String s, String s1) {
 
     }
@@ -201,42 +206,7 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCb {
     }
 
     @Override
-    public void onXsensDotCalibrationResult(String s, int i, int i1, int i2) {
-
-    }
-
-    @Override
-    public void onXsensDotOtaChecked(String s, boolean b, String s1, String s2) {
-
-    }
-
-    @Override
-    public void onXsensDotOtaRollback(String s, boolean b, String s1, String s2) {
-
-    }
-
-    @Override
-    public void onXsensDotOtaFileMismatch(String s) {
-
-    }
-
-    @Override
-    public void onXsensDotOtaDownloaded(String s, int i) {
-
-    }
-
-    @Override
-    public void onXsensDotOtaUpdated(String s, int i, int i1, int i2, int i3, int i4) {
-
-    }
-
-    @Override
-    public void onXsensDotNewFirmwareVersion(String s, boolean b, String s1, String s2) {
-
-    }
-
-    @Override
-    public void onXsensDotOtaDischarge(String s) {
+    public void onXsensDotPowerSavingTriggered(String s) {
 
     }
 }

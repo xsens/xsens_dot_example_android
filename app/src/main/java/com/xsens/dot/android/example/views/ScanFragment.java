@@ -48,7 +48,7 @@ import com.xsens.dot.android.example.interfaces.ScanClickInterface;
 import com.xsens.dot.android.example.interfaces.SensorClickInterface;
 import com.xsens.dot.android.example.viewmodels.BluetoothViewModel;
 import com.xsens.dot.android.example.viewmodels.SensorViewModel;
-import com.xsens.dot.android.sdk.interfaces.XsensDotScannerCb;
+import com.xsens.dot.android.sdk.interfaces.XsensDotScannerCallback;
 import com.xsens.dot.android.sdk.models.XsensDotDevice;
 import com.xsens.dot.android.sdk.utils.XsensDotScanner;
 
@@ -68,7 +68,7 @@ import static com.xsens.dot.android.example.views.MainActivity.FRAGMENT_TAG_SCAN
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
 
-public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorClickInterface, ScanClickInterface {
+public class ScanFragment extends Fragment implements XsensDotScannerCallback, SensorClickInterface, ScanClickInterface {
 
     private static final String TAG = ScanFragment.class.getSimpleName();
 
