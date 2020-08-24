@@ -37,6 +37,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.xsens.dot.android.example.databinding.FragmentChartBinding;
 import com.xsens.dot.android.example.databinding.FragmentScanBinding;
 import com.xsens.dot.android.example.viewmodels.SensorViewModel;
 
@@ -51,7 +52,7 @@ public class ChartFragment extends Fragment {
 
     private static final String TAG = ChartFragment.class.getSimpleName();
 
-    private FragmentScanBinding mBinding;
+    private FragmentChartBinding mBinding;
     private SensorViewModel mSensorViewModel;
 
     public static ChartFragment newInstance() {
@@ -73,7 +74,7 @@ public class ChartFragment extends Fragment {
 
         super.onCreateView(inflater, container, savedInstanceState);
 
-        mBinding = FragmentScanBinding.inflate(LayoutInflater.from(getContext()));
+        mBinding = FragmentChartBinding.inflate(LayoutInflater.from(getContext()));
         return mBinding.getRoot();
     }
 
