@@ -61,6 +61,7 @@ import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import static com.xsens.dot.android.example.views.MainActivity.FRAGMENT_TAG_SCAN;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
 
@@ -121,6 +122,15 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
         mConnectionDialog = connectionDialogBuilder.create();
 
         if (getActivity() != null) ((MainActivity) getActivity()).setScanTriggerListener(this);
+    }
+
+    @Override
+    public void onResume() {
+
+        super.onResume();
+
+        MainActivity.sCurrentFragment = FRAGMENT_TAG_SCAN;
+        getActivity().invalidateOptionsMenu();
     }
 
     @Override
@@ -217,27 +227,27 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
                     }
                 }
             });
-        }
 
-        mSensorViewModel.getConnectionUpdatedDevice().observe(this, new Observer<XsensDotDevice>() {
+            mSensorViewModel.getConnectionUpdatedDevice().observe(this, new Observer<XsensDotDevice>() {
 
-            @Override
-            public void onChanged(XsensDotDevice device) {
+                @Override
+                public void onChanged(XsensDotDevice device) {
 
-                String address = device.getAddress();
-                int state = device.getConnectionState();
-                Log.d(TAG, "getConnectionUpdatedDevice() - address = " + address + ", state = " + state);
+                    String address = device.getAddress();
+                    int state = device.getConnectionState();
+                    Log.d(TAG, "getConnectionUpdatedDevice() - address = " + address + ", state = " + state);
 
-                // TODO: 2020/8/18 Update connection state for each item.
+                    // TODO: 2020/8/18 Update connection state for each item.
 
-                switch (state) {
+                    switch (state) {
 
-                    case CONN_STATE_CONNECTED:
-                        if (mConnectionDialog.isShowing()) mConnectionDialog.dismiss();
-                        break;
+                        case CONN_STATE_CONNECTED:
+                            if (mConnectionDialog.isShowing()) mConnectionDialog.dismiss();
+                            break;
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     private void initXsDotScanner() {

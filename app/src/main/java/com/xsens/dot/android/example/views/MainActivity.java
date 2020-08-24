@@ -65,11 +65,16 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BLUETOOTH = 1001;
     private static final int REQUEST_PERMISSION_LOCATION = 1002;
 
+    public static final String FRAGMENT_TAG_SCAN = "scan";
+    public static final String FRAGMENT_TAG_CHART = "chart";
+
     private ActivityMainBinding mBinding;
     private BluetoothViewModel mBluetoothViewModel;
 
     private boolean mIsScanning = false;
     private ScanClickInterface mScanListener;
+
+    public static String sCurrentFragment = FRAGMENT_TAG_SCAN;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -156,10 +161,21 @@ public class MainActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
 
         MenuItem scanItem = menu.findItem(R.id.action_scan);
+        MenuItem measureItem = menu.findItem(R.id.action_measure);
 
         if (mIsScanning) scanItem.setTitle(getString(R.string.menu_stop_scan));
         else scanItem.setTitle(getString(R.string.menu_start_scan));
 
+        if (sCurrentFragment.equals(FRAGMENT_TAG_SCAN)) {
+
+            scanItem.setVisible(true);
+            measureItem.setVisible(true);
+
+        } else if (sCurrentFragment.equals(FRAGMENT_TAG_CHART)) {
+
+            scanItem.setVisible(false);
+            measureItem.setVisible(false);
+        }
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -181,6 +197,8 @@ public class MainActivity extends AppCompatActivity {
 
             case R.id.action_measure:
 
+                Fragment chartFragment = ChartFragment.newInstance();
+                addFragment(chartFragment, FRAGMENT_TAG_CHART);
                 break;
         }
 
@@ -192,13 +210,13 @@ public class MainActivity extends AppCompatActivity {
         if (null != getIntent()) {
 
             ScanFragment fragment = ScanFragment.newInstance();
-            getSupportFragmentManager().beginTransaction().replace(R.id.container, fragment).commit();
+            getSupportFragmentManager().beginTransaction().replace(R.id.container, fragment, FRAGMENT_TAG_SCAN).commit();
         }
     }
 
-    private void addFragment(Fragment fragment) {
+    private void addFragment(Fragment fragment, String tag) {
 
-        getSupportFragmentManager().beginTransaction().replace(R.id.container, fragment).addToBackStack(null).commit();
+        getSupportFragmentManager().beginTransaction().replace(R.id.container, fragment, tag).addToBackStack(null).commit();
     }
 
     /**
