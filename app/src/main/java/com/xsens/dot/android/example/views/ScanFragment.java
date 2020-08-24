@@ -53,6 +53,7 @@ import com.xsens.dot.android.sdk.models.XsensDotDevice;
 import com.xsens.dot.android.sdk.utils.XsensDotScanner;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -61,6 +62,8 @@ import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_DEVICE;
+import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_STATE;
 import static com.xsens.dot.android.example.views.MainActivity.FRAGMENT_TAG_SCAN;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
@@ -74,7 +77,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
     private SensorViewModel mSensorViewModel;
 
     private ScanAdapter mScanAdapter;
-    private ArrayList<BluetoothDevice> mScannedSensorList = new ArrayList<>();
+    private ArrayList<HashMap<String, Object>> mScannedSensorList = new ArrayList<>();
 
     private XsensDotScanner mXsDotScanner;
     private boolean mIsScanning = false;
@@ -109,7 +112,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
 
         super.onActivityCreated(savedInstanceState);
 
-        mScanAdapter = new ScanAdapter(mScannedSensorList);
+        mScanAdapter = new ScanAdapter(getContext(), mScannedSensorList);
         mScanAdapter.setSensorClickListener(this);
         mBinding.sensorRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mBinding.sensorRecyclerView.setItemAnimator(new DefaultItemAnimator());
@@ -130,7 +133,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
         super.onResume();
 
         MainActivity.sCurrentFragment = FRAGMENT_TAG_SCAN;
-        getActivity().invalidateOptionsMenu();
+        if (getActivity() != null) getActivity().invalidateOptionsMenu();
     }
 
     @Override
@@ -138,7 +141,9 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
 
         super.onDestroy();
 
+        // Stop scanning to let other apps to use scan function.
         if (mXsDotScanner != null) mXsDotScanner.stopScan();
+        // Release all connections when app is destroying.
         mSensorViewModel.disconnectAllSensors();
     }
 
@@ -146,10 +151,11 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
     public void onScanTriggered(boolean triggered) {
 
         if (triggered) {
+            // Disconnect to all sensors to make sure the connection has been released.
+            mSensorViewModel.disconnectAllSensors();
 
             mScannedSensorList.clear();
             mScanAdapter.notifyDataSetChanged();
-
             mIsScanning = mXsDotScanner.startScan();
 
         } else {
@@ -167,9 +173,20 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
 
         if (isAdded()) {
 
-            if (!mScannedSensorList.contains(device)) {
+            boolean isExist = false;
+            for (HashMap<String, Object> map : mScannedSensorList) {
 
-                mScannedSensorList.add(device);
+                if (((BluetoothDevice) map.get(KEY_DEVICE)).getAddress().equals(device.getAddress()))
+                    isExist = true;
+            }
+
+            if (!isExist) {
+
+                HashMap<String, Object> map = new HashMap<>();
+                map.put(KEY_DEVICE, device);
+                map.put(KEY_STATE, CONN_STATE_DISCONNECTED);
+                mScannedSensorList.add(map);
+
                 mScanAdapter.notifyItemInserted(mScannedSensorList.size() - 1);
             }
         }
@@ -181,7 +198,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
         mIsScanning = !mXsDotScanner.stopScan();
         mBluetoothViewModel.updateScanState(false);
 
-        BluetoothDevice device = mScanAdapter.getItem(position);
+        BluetoothDevice device = mScanAdapter.getDevice(position);
         XsensDotDevice xsDevice = mSensorViewModel.getSensor(device.getAddress());
 
         if (xsDevice != null) {
@@ -193,7 +210,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
                 mConnectionDialog.show();
                 mSensorViewModel.connectSensor(getContext(), device);
 
-            } else  {
+            } else {
 
                 mSensorViewModel.disconnectSensor(device.getAddress());
             }
@@ -237,7 +254,21 @@ public class ScanFragment extends Fragment implements XsensDotScannerCb, SensorC
                     int state = device.getConnectionState();
                     Log.d(TAG, "getConnectionUpdatedDevice() - address = " + address + ", state = " + state);
 
-                    // TODO: 2020/8/18 Update connection state for each item.
+                    for (HashMap<String, Object> map : mScannedSensorList) {
+
+                        BluetoothDevice _device = (BluetoothDevice) map.get(KEY_DEVICE);
+
+                        if (_device != null) {
+
+                            String _address = _device.getAddress();
+
+                            if (_address.equals(address)) {
+
+                                map.put(KEY_STATE, state);
+                                mScanAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
 
                     switch (state) {
 

@@ -32,6 +32,7 @@
 package com.xsens.dot.android.example.adapters;
 
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,17 +42,31 @@ import com.xsens.dot.android.example.R;
 import com.xsens.dot.android.example.interfaces.SensorClickInterface;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTING;
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_RECONNECTING;
+
 public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder> {
 
+    private static final String TAG = ScanAdapter.class.getSimpleName();
+
+    public static final String KEY_DEVICE = "device";
+    public static final String KEY_STATE = "state";
+
+    private Context mContext;
+
     private SensorClickInterface mListener;
-    private ArrayList<BluetoothDevice> mSensorList;
+    private ArrayList<HashMap<String, Object>> mSensorList;
 
-    public ScanAdapter(ArrayList<BluetoothDevice> scannedSensorList) {
+    public ScanAdapter(Context context, ArrayList<HashMap<String, Object>> scannedSensorList) {
 
+        mContext = context;
         mSensorList = scannedSensorList;
     }
 
@@ -66,8 +81,38 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
     @Override
     public void onBindViewHolder(@NonNull ScanViewHolder holder, final int position) {
 
-        holder.sensorName.setText(mSensorList.get(position).getName());
-        holder.sensorMacAddress.setText(mSensorList.get(position).getAddress());
+        BluetoothDevice device = (BluetoothDevice) mSensorList.get(position).get(KEY_DEVICE);
+        int state = (int) mSensorList.get(position).get(KEY_STATE);
+
+        holder.sensorName.setText(device.getName());
+        holder.sensorMacAddress.setText(device.getAddress());
+
+        switch (state) {
+
+            case CONN_STATE_DISCONNECTED:
+
+                holder.sensorState.setVisibility(View.GONE);
+                holder.sensorState.setText(mContext.getResources().getString(R.string.disconnected));
+                break;
+
+            case CONN_STATE_CONNECTING:
+
+                holder.sensorState.setVisibility(View.VISIBLE);
+                holder.sensorState.setText(mContext.getResources().getString(R.string.connecting));
+                break;
+
+            case CONN_STATE_CONNECTED:
+
+                holder.sensorState.setVisibility(View.VISIBLE);
+                holder.sensorState.setText(mContext.getResources().getString(R.string.connected));
+                break;
+
+            case CONN_STATE_RECONNECTING:
+
+                holder.sensorState.setVisibility(View.VISIBLE);
+                holder.sensorState.setText(mContext.getResources().getString(R.string.reconnecting));
+                break;
+        }
 
         holder.rootView.setOnClickListener(new View.OnClickListener() {
 
@@ -85,9 +130,14 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
         return mSensorList == null ? 0 : mSensorList.size();
     }
 
-    public BluetoothDevice getItem(int position) {
+    public BluetoothDevice getDevice(int position) {
 
-        return mSensorList == null ? null : mSensorList.get(position);
+        if (mSensorList != null) {
+
+            return (BluetoothDevice) mSensorList.get(position).get(KEY_DEVICE);
+        }
+
+        return null;
     }
 
     public void setSensorClickListener(SensorClickInterface listener) {
@@ -100,6 +150,7 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
         View rootView;
         TextView sensorName;
         TextView sensorMacAddress;
+        TextView sensorState;
 
         ScanViewHolder(View v) {
 
@@ -108,6 +159,7 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
             rootView = v;
             sensorName = v.findViewById(R.id.sensor_name);
             sensorMacAddress = v.findViewById(R.id.sensor_mac_address);
+            sensorState = v.findViewById(R.id.sensor_state);
         }
     }
 }

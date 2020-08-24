@@ -89,7 +89,7 @@ public class ChartFragment extends Fragment {
         super.onResume();
 
         MainActivity.sCurrentFragment = FRAGMENT_TAG_CHART;
-        getActivity().invalidateOptionsMenu();
+        if (getActivity() != null) getActivity().invalidateOptionsMenu();
     }
 
     @Override

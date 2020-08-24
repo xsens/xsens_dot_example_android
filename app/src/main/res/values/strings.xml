@@ -3,11 +3,15 @@
 
     <string name="hint_turn_on_bluetooth">Please turn on the Bluetooth adapter</string>
     <string name="hint_allow_location">Please allow location permission to use sensor(s)</string>
+    <string name="hint_connecting">Please wait for the connection result...</string>
 
     <string name="menu_start_scan">Scan</string>
     <string name="menu_stop_scan">Stop Scanning</string>
     <string name="menu_measure">Measure</string>
 
+    <string name="disconnected">Disconnected</string>
     <string name="connecting">Connecting</string>
-    <string name="hint_connecting">Please wait for the connection result...</string>
+    <string name="connected">Connected</string>
+    <string name="reconnecting">Reconnecting</string>
+
 </resources>
