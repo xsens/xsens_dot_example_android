@@ -37,4 +37,6 @@ dependencies {
 
     // Import Xsens DOT SDK
     implementation(name: 'XsensDotCore', ext: 'aar')
+
+    // Import third-party libraries
 }

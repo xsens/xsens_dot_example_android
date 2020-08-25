@@ -68,22 +68,42 @@ import static com.xsens.dot.android.example.views.MainActivity.FRAGMENT_TAG_SCAN
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
 
+/**
+ * A fragment for scanned item.
+ */
 public class ScanFragment extends Fragment implements XsensDotScannerCallback, SensorClickInterface, ScanClickInterface {
 
     private static final String TAG = ScanFragment.class.getSimpleName();
 
+    // The view binder of ScanFragment
     private FragmentScanBinding mBinding;
+
+    // The Bluetooth view model instance
     private BluetoothViewModel mBluetoothViewModel;
+
+    // The devices view model instance
     private SensorViewModel mSensorViewModel;
 
+    // The adapter for scanned device item
     private ScanAdapter mScanAdapter;
+
+    // A list contains scanned Bluetooth device
     private ArrayList<HashMap<String, Object>> mScannedSensorList = new ArrayList<>();
 
+    // The XsensDotScanner object
     private XsensDotScanner mXsDotScanner;
+
+    // A variable for scanning flag
     private boolean mIsScanning = false;
 
+    // A dialog during the connection
     private AlertDialog mConnectionDialog;
 
+    /**
+     * Get the instance of ScanFragment
+     *
+     * @return The instance of ScanFragment
+     */
     public static ScanFragment newInstance() {
 
         return new ScanFragment();
@@ -124,6 +144,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
         connectionDialogBuilder.setCancelable(false);
         mConnectionDialog = connectionDialogBuilder.create();
 
+        // Set the SensorClickInterface instance to main activity.
         if (getActivity() != null) ((MainActivity) getActivity()).setScanTriggerListener(this);
     }
 
@@ -132,6 +153,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
 
         super.onResume();
 
+        // Notify main activity to refresh menu.
         MainActivity.sCurrentFragment = FRAGMENT_TAG_SCAN;
         if (getActivity() != null) getActivity().invalidateOptionsMenu();
     }
@@ -173,6 +195,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
 
         if (isAdded()) {
 
+            // Use the mac address as UID to filter the same scan result.
             boolean isExist = false;
             for (HashMap<String, Object> map : mScannedSensorList) {
 
@@ -195,7 +218,9 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
     @Override
     public void onSensorClick(View v, int position) {
 
+        // If success for stopping, it will return True from SDK. So use !(not) here.
         mIsScanning = !mXsDotScanner.stopScan();
+        // Notify main activity to update the scan button.
         mBluetoothViewModel.updateScanState(false);
 
         BluetoothDevice device = mScanAdapter.getDevice(position);
@@ -203,6 +228,12 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
 
         if (xsDevice != null) {
 
+            /**
+             * state = 0 : Disconnected
+             * state = 1 : Connecting
+             * state = 2 : Connected
+             * state = 4 : Reconnecting
+             */
             final int state = xsDevice.getConnectionState();
 
             if (state == CONN_STATE_DISCONNECTED) {
@@ -218,10 +249,14 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
         } else {
 
             mConnectionDialog.show();
+            // The XsensDotDevice isn't exist in the mSensorList(SensorViewModel), try to connect and add it.
             mSensorViewModel.connectSensor(getContext(), device);
         }
     }
 
+    /**
+     * Initialize and observe view models.
+     */
     private void bindViewModel() {
 
         if (getActivity() != null) {
@@ -261,7 +296,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
                         if (_device != null) {
 
                             String _address = _device.getAddress();
-
+                            // Update connection state by the same mac address.
                             if (_address.equals(address)) {
 
                                 map.put(KEY_STATE, state);
@@ -273,6 +308,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
                     switch (state) {
 
                         case CONN_STATE_CONNECTED:
+
                             if (mConnectionDialog.isShowing()) mConnectionDialog.dismiss();
                             break;
                     }
@@ -281,6 +317,9 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
         }
     }
 
+    /**
+     * Setup for Xsens DOT scanner.
+     */
     private void initXsDotScanner() {
 
         if (mXsDotScanner == null) {

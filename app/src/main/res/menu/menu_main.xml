@@ -10,8 +10,15 @@
         android:title="@string/menu_stop_scan"/>
 
     <item
-        android:id="@+id/action_measure"
+        android:id="@+id/action_streaming"
         android:orderInCategory="1"
+        android:title="@string/menu_start_streaming"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_measure"
+        android:orderInCategory="2"
         android:title="@string/menu_measure"
         app:showAsAction="never" />
+
 </menu>

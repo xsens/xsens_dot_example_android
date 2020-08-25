@@ -52,18 +52,31 @@ import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECT
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_RECONNECTING;
 
+/**
+ * A view adapter for item view of scanned BLE device..
+ */
 public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder> {
 
     private static final String TAG = ScanAdapter.class.getSimpleName();
 
-    public static final String KEY_DEVICE = "device";
-    public static final String KEY_STATE = "state";
+    // The keys of HashMap
+    public static final String KEY_DEVICE = "device", KEY_STATE = "state";
 
+    // The application context
     private Context mContext;
 
+    // Send the click event to fragment
     private SensorClickInterface mListener;
+
+    // Put all scanned deviceS into one list
     private ArrayList<HashMap<String, Object>> mSensorList;
 
+    /**
+     * Default constructor.
+     *
+     * @param context           The application context
+     * @param scannedSensorList The scanned devices list
+     */
     public ScanAdapter(Context context, ArrayList<HashMap<String, Object>> scannedSensorList) {
 
         mContext = context;
@@ -82,11 +95,15 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
     public void onBindViewHolder(@NonNull ScanViewHolder holder, final int position) {
 
         BluetoothDevice device = (BluetoothDevice) mSensorList.get(position).get(KEY_DEVICE);
+
+        if (device != null) {
+
+            holder.sensorName.setText(device.getName());
+            holder.sensorMacAddress.setText(device.getAddress());
+        }
+
         int state = (int) mSensorList.get(position).get(KEY_STATE);
-
-        holder.sensorName.setText(device.getName());
-        holder.sensorMacAddress.setText(device.getAddress());
-
+        // Update connection result on the screen.
         switch (state) {
 
             case CONN_STATE_DISCONNECTED:
@@ -118,7 +135,7 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
 
             @Override
             public void onClick(View v) {
-
+                // Notify the position of click event to fragment.
                 if (mListener != null) mListener.onSensorClick(v, position);
             }
         });
@@ -130,6 +147,12 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
         return mSensorList == null ? 0 : mSensorList.size();
     }
 
+    /**
+     * Get the Bluetooth device.
+     *
+     * @param position The position of item view
+     * @return The scanned Bluetooth device
+     */
     public BluetoothDevice getDevice(int position) {
 
         if (mSensorList != null) {
@@ -140,11 +163,19 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
         return null;
     }
 
+    /**
+     * Initialize click listener of item view.
+     *
+     * @param listener The fragment which implemented SensorClickInterface
+     */
     public void setSensorClickListener(SensorClickInterface listener) {
 
         mListener = listener;
     }
 
+    /**
+     * A Customized class for ViewHolder of RecyclerView.
+     */
     static class ScanViewHolder extends RecyclerView.ViewHolder {
 
         View rootView;

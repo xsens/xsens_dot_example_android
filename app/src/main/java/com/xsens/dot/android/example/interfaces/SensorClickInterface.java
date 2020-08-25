@@ -41,7 +41,7 @@ public interface SensorClickInterface {
     /**
      * This function will be triggered when the item view is clicked.
      *
-     * @param v The item view
+     * @param v        The item view
      * @param position The position of item view
      */
     void onSensorClick(View v, int position);

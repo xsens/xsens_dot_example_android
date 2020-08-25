@@ -48,6 +48,7 @@ import android.widget.Toast;
 import com.xsens.dot.android.example.R;
 import com.xsens.dot.android.example.databinding.ActivityMainBinding;
 import com.xsens.dot.android.example.interfaces.ScanClickInterface;
+import com.xsens.dot.android.example.interfaces.StreamingClickInterface;
 import com.xsens.dot.android.example.utils.Utils;
 import com.xsens.dot.android.example.viewmodels.BluetoothViewModel;
 
@@ -58,22 +59,38 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Observer;
 
+/**
+ * The main activity.
+ */
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private static final int REQUEST_ENABLE_BLUETOOTH = 1001;
-    private static final int REQUEST_PERMISSION_LOCATION = 1002;
+    // The code of request
+    private static final int REQUEST_ENABLE_BLUETOOTH = 1001, REQUEST_PERMISSION_LOCATION = 1002;
 
-    public static final String FRAGMENT_TAG_SCAN = "scan";
-    public static final String FRAGMENT_TAG_CHART = "chart";
+    // The tag of fragments
+    public static final String FRAGMENT_TAG_SCAN = "scan", FRAGMENT_TAG_CHART = "chart";
 
+    // The view binder of MainActivity
     private ActivityMainBinding mBinding;
+
+    // The Bluetooth view model instance
     private BluetoothViewModel mBluetoothViewModel;
 
+    // A variable for scanning flag
     private boolean mIsScanning = false;
+
+    // Send the start/stop scan click event to fragment
     private ScanClickInterface mScanListener;
 
+    // A variable for streaming flag
+    private boolean mIsStreaming = false;
+
+    // Send the start/stop streaming click event to fragment
+    private StreamingClickInterface mStreamingListener;
+
+    // A variable to keep the current fragment id
     public static String sCurrentFragment = FRAGMENT_TAG_SCAN;
 
     @Override
@@ -84,10 +101,11 @@ public class MainActivity extends AppCompatActivity {
         mBinding = ActivityMainBinding.inflate(LayoutInflater.from(this));
         setContentView(mBinding.getRoot());
 
-        setupContainer();
+        setupFragmentContainer();
         bindViewModel();
         checkBluetoothAndPermission();
 
+        // Register this action to monitor Bluetooth status.
         registerReceiver(mBluetoothStateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
     }
 
@@ -112,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
 
         FragmentManager manager = getSupportFragmentManager();
 
+        // If the fragment count > 0 in the stack, try to resume the previous page.
         if (manager.getBackStackEntryCount() > 0) manager.popBackStack();
         else super.onBackPressed();
     }
@@ -161,6 +180,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
 
         MenuItem scanItem = menu.findItem(R.id.action_scan);
+        MenuItem streamingItem = menu.findItem(R.id.action_streaming);
         MenuItem measureItem = menu.findItem(R.id.action_measure);
 
         if (mIsScanning) scanItem.setTitle(getString(R.string.menu_stop_scan));
@@ -169,11 +189,13 @@ public class MainActivity extends AppCompatActivity {
         if (sCurrentFragment.equals(FRAGMENT_TAG_SCAN)) {
 
             scanItem.setVisible(true);
+            streamingItem.setVisible(false);
             measureItem.setVisible(true);
 
         } else if (sCurrentFragment.equals(FRAGMENT_TAG_CHART)) {
 
             scanItem.setVisible(false);
+            streamingItem.setVisible(true);
             measureItem.setVisible(false);
         }
         return super.onPrepareOptionsMenu(menu);
@@ -189,14 +211,19 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_scan:
 
                 if (mScanListener != null && checkBluetoothAndPermission()) {
-
+                    // Make sure th location permission is granted then start/stop scanning.
                     if (mIsScanning) mScanListener.onScanTriggered(false);
                     else mScanListener.onScanTriggered(true);
                 }
                 break;
 
-            case R.id.action_measure:
+            case R.id.action_streaming:
+                // When the streaming button is clicked, notify to ChartFragment and wait for the syncing result.
+                mStreamingListener.onStreamingTriggered();
+                break;
 
+            case R.id.action_measure:
+                // Change to ChartFragment and put ScanFragment to the back stack.
                 Fragment chartFragment = ChartFragment.newInstance();
                 addFragment(chartFragment, FRAGMENT_TAG_CHART);
                 break;
@@ -205,7 +232,10 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void setupContainer() {
+    /**
+     * Use ScanFragment as default page.
+     */
+    private void setupFragmentContainer() {
 
         if (null != getIntent()) {
 
@@ -214,6 +244,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Add a fragment to full the screen.
+     *
+     * @param fragment The instance of fragment
+     * @param tag      The tag of fragment
+     */
     private void addFragment(Fragment fragment, String tag) {
 
         getSupportFragmentManager().beginTransaction().replace(R.id.container, fragment, tag).addToBackStack(null).commit();
@@ -240,6 +276,9 @@ public class MainActivity extends AppCompatActivity {
         return status;
     }
 
+    /**
+     * Initialize and observe view models.
+     */
     private void bindViewModel() {
 
         mBluetoothViewModel = BluetoothViewModel.getInstance(this);
@@ -248,18 +287,36 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onChanged(Boolean scanning) {
-
+                // If the status of scanning is changed, try to refresh the menu.
                 mIsScanning = scanning;
                 invalidateOptionsMenu();
             }
         });
     }
 
+    /**
+     * Set the trigger of scan button.
+     *
+     * @param listener The class which implemented ScanClickInterface
+     */
     public void setScanTriggerListener(ScanClickInterface listener) {
 
         mScanListener = listener;
     }
 
+    /**
+     * Set the trigger of streaming button.
+     *
+     * @param listener The class which implemented StreamingClickInterface
+     */
+    public void setStreamingTriggerListener(StreamingClickInterface listener) {
+
+        mStreamingListener = listener;
+    }
+
+    /**
+     * A receiver for Bluetooth status.
+     */
     private final BroadcastReceiver mBluetoothStateReceiver = new BroadcastReceiver() {
 
         @Override
@@ -272,14 +329,16 @@ public class MainActivity extends AppCompatActivity {
                 if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
 
                     final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
-
+                    // Notify the Bluetooth status to ScanFragment.
                     switch (state) {
 
                         case BluetoothAdapter.STATE_OFF:
+
                             mBluetoothViewModel.updateBluetoothEnableState(false);
                             break;
 
                         case BluetoothAdapter.STATE_ON:
+
                             mBluetoothViewModel.updateBluetoothEnableState(true);
                             break;
                     }

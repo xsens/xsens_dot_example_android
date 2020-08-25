@@ -47,20 +47,40 @@ import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStoreOwner;
 
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTING;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_RECONNECTING;
 
+/**
+ * A view model class for notifying data to views and handle logic operations.
+ */
 public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback {
 
     private static final String TAG = SensorViewModel.class.getSimpleName();
 
+    /**
+     * Get the instance of SensorViewModel
+     *
+     * @param owner The life cycle owner from activity/fragment
+     * @return The SensorViewModel
+     */
     public static SensorViewModel getInstance(@NonNull ViewModelStoreOwner owner) {
 
         return new ViewModelProvider(owner, new ViewModelProvider.NewInstanceFactory()).get(SensorViewModel.class);
     }
 
+    // A list contains XsensDotDevice
     private MutableLiveData<ArrayList<XsensDotDevice>> mSensorList = new MutableLiveData<>();
+    // A variable to notify the connection state
     private MutableLiveData<XsensDotDevice> mConnectionUpdatedSensor = new MutableLiveData<>();
 
+    /**
+     * Get the XsensDotDevice object from list by mac address.
+     *
+     * @param address The mac address of device
+     * @return The XsensDotDevice object
+     */
     public XsensDotDevice getSensor(String address) {
 
         final ArrayList<XsensDotDevice> list = mSensorList.getValue();
@@ -76,6 +96,23 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
         return null;
     }
 
+    /**
+     * Get all XsensDotDevice objects from list.
+     *
+     * @return The list contains all devices
+     */
+    public ArrayList<XsensDotDevice> getAllSensors() {
+
+        if (mSensorList.getValue() == null) return new ArrayList<>();
+        else return mSensorList.getValue();
+    }
+
+    /**
+     * Initialize, connect the XsensDotDevice and put it into a list.
+     *
+     * @param context The application context
+     * @param device  The scanned Bluetooth device
+     */
     public void connectSensor(Context context, BluetoothDevice device) {
 
         XsensDotDevice xsDevice = new XsensDotDevice(context, device, this);
@@ -83,6 +120,11 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
         addDevice(xsDevice);
     }
 
+    /**
+     * Disconnect one device by mac address.
+     *
+     * @param address The mac address of device
+     */
     public void disconnectSensor(String address) {
 
         if (mSensorList.getValue() != null) {
@@ -98,6 +140,9 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
         }
     }
 
+    /**
+     * Disconnect all devices which are exist in the list.
+     */
     public void disconnectAllSensors() {
 
         if (mSensorList.getValue() != null) {
@@ -109,6 +154,11 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
         }
     }
 
+    /**
+     * Add the XsensDotDevice to a list, the UID is mac address.
+     *
+     * @param xsDevice The XsensDotDevice object
+     */
     private void addDevice(XsensDotDevice xsDevice) {
 
         if (mSensorList.getValue() == null) mSensorList.setValue(new ArrayList<XsensDotDevice>());
@@ -128,6 +178,11 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
         if (!isExist) list.add(xsDevice);
     }
 
+    /**
+     * If device is disconnected by user means don't need to reconnect. So remove this device from list by mac address.
+     *
+     * @param address The mac address of device
+     */
     private void removeDevice(String address) {
 
         if (mSensorList.getValue() == null) {
@@ -152,6 +207,11 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
         }
     }
 
+    /**
+     * Observe this function to listen which device's connection state is updated.
+     *
+     * @return The latest updated device
+     */
     public MutableLiveData<XsensDotDevice> getConnectionUpdatedDevice() {
 
         return mConnectionUpdatedSensor;
@@ -168,7 +228,20 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
         switch (state) {
 
             case CONN_STATE_DISCONNECTED:
+
                 removeDevice(address);
+                break;
+
+            case CONN_STATE_CONNECTING:
+
+                break;
+
+            case CONN_STATE_CONNECTED:
+
+                break;
+
+            case CONN_STATE_RECONNECTING:
+
                 break;
         }
     }
@@ -186,27 +259,32 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
     }
 
     @Override
-    public void onXsensDotInitDone(String s) {
+    public void onXsensDotInitDone(String address) {
 
+        Log.i(TAG, "onXsensDotInitDone() - address = " + address);
     }
 
     @Override
-    public void onXsensDotTagChanged(String s, String s1) {
+    public void onXsensDotTagChanged(String address, String tag) {
 
+        Log.i(TAG, "onXsensDotTagChanged() - address = " + address + ", tag = " + tag);
     }
 
     @Override
-    public void onXsensDotBatteryChanged(String s, int i, int i1) {
+    public void onXsensDotBatteryChanged(String address, int status, int percentage) {
 
+        Log.i(TAG, "onXsensDotBatteryChanged() - address = " + address + ", status = " + status + ", percentage = " + percentage);
     }
 
     @Override
-    public void onXsensDotDataChanged(String s, XsensDotData xsensDotData) {
+    public void onXsensDotDataChanged(String address, XsensDotData data) {
 
+        Log.i(TAG, "onXsensDotDataChanged() - address = " + address);
     }
 
     @Override
-    public void onXsensDotPowerSavingTriggered(String s) {
+    public void onXsensDotPowerSavingTriggered(String address) {
 
+        Log.i(TAG, "onXsensDotPowerSavingTriggered() - address = " + address);
     }
 }

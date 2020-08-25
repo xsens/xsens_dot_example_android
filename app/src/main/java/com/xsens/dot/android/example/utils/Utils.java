@@ -63,6 +63,12 @@ public class Utils {
         return false;
     }
 
+    /**
+     * If the Bluetooth adapter is disabled, popup a system dialog for user to enable it.
+     *
+     * @param activity    The main activity
+     * @param requestCode The request code for this intent
+     */
     public static void requestEnableBluetooth(Activity activity, int requestCode) {
 
         Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -80,6 +86,12 @@ public class Utils {
         return activity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
+    /**
+     * If the location permission isn't granted, popup a system dialog for user to enable it.
+     *
+     * @param activity    The main activity
+     * @param requestCode The request code for this action
+     */
     public static void requestLocationPermission(Activity activity, int requestCode) {
 
         activity.requestPermissions(new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, requestCode);

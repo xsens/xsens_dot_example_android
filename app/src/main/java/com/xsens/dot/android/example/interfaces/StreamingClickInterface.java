@@ -29,74 +29,15 @@
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
 
-package com.xsens.dot.android.example.viewmodels;
-
-import androidx.annotation.NonNull;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelStoreOwner;
+package com.xsens.dot.android.example.interfaces;
 
 /**
- * A view model class for notifying data to views.
+ * This class is to react click event between fragment and activity.
  */
-public class BluetoothViewModel extends ViewModel {
-
-    private static final String TAG = BluetoothViewModel.class.getSimpleName();
+public interface StreamingClickInterface {
 
     /**
-     * Get the instance of BluetoothViewModel
-     *
-     * @param owner The life cycle owner from activity/fragment
-     * @return The BluetoothViewModel
+     * This function will be triggered when the start/stop measurement button is clicked.
      */
-    public static BluetoothViewModel getInstance(@NonNull ViewModelStoreOwner owner) {
-
-        return new ViewModelProvider(owner, new ViewModelProvider.NewInstanceFactory()).get(BluetoothViewModel.class);
-    }
-
-    // A variable to notify the Bluetooth status
-    private MutableLiveData<Boolean> isBluetoothEnabled = new MutableLiveData<>();
-    // A variable to notify the scanning status
-    private MutableLiveData<Boolean> isScanning = new MutableLiveData<>();
-
-    /**
-     * Observe this function to listen the status of Bluetooth adapter.
-     *
-     * @return The latest status
-     */
-    public MutableLiveData<Boolean> isBluetoothEnabled() {
-
-        return isBluetoothEnabled;
-    }
-
-    /**
-     * Notify the Bluetooth adapter status to activity/fragment
-     *
-     * @param enabled he status of Bluetooth
-     */
-    public void updateBluetoothEnableState(boolean enabled) {
-
-        isBluetoothEnabled.postValue(enabled);
-    }
-
-    /**
-     * Observe this function to listen the scanning status.
-     *
-     * @return The latest scan status
-     */
-    public MutableLiveData<Boolean> isScanning() {
-
-        return isScanning;
-    }
-
-    /**
-     * Notify the scan status to activity/fragment
-     *
-     * @param scanning The status of scanning
-     */
-    public void updateScanState(boolean scanning) {
-
-        isScanning.postValue(scanning);
-    }
+    void onStreamingTriggered();
 }

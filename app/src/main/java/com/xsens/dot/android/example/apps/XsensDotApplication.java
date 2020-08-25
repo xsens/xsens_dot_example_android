@@ -37,7 +37,7 @@ import android.util.Log;
 import com.xsens.dot.android.sdk.XsensDotSdk;
 
 /**
- * Customize an application class for basic initialization.
+ * A customized application class for basic initialization.
  */
 public class XsensDotApplication extends Application {
 
@@ -56,6 +56,7 @@ public class XsensDotApplication extends Application {
      */
     private void initXsensDotSdk() {
 
+        // Get the version name of SDK.
         String version = XsensDotSdk.getSdkVersion();
         Log.i(TAG, "initXsensDotSdk() - version: " + version);
 
