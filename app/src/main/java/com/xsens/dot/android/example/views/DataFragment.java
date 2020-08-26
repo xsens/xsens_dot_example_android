@@ -39,9 +39,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.xsens.dot.android.example.R;
-import com.xsens.dot.android.example.databinding.FragmentChartBinding;
+import com.xsens.dot.android.example.databinding.FragmentDataBinding;
 import com.xsens.dot.android.example.interfaces.StreamingClickInterface;
 import com.xsens.dot.android.example.viewmodels.SensorViewModel;
 import com.xsens.dot.android.sdk.interfaces.XsensDotSyncCallback;
@@ -57,7 +58,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import static com.xsens.dot.android.example.views.MainActivity.FRAGMENT_TAG_CHART;
+import static com.xsens.dot.android.example.views.MainActivity.FRAGMENT_TAG_DATA;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.LOG_STATE_ON;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.PLOT_STATE_ON;
@@ -66,33 +67,30 @@ import static com.xsens.dot.android.sdk.models.XsensDotPayload.PAYLOAD_TYPE_COMP
 /**
  * A fragment for presenting the raw-data and storing to file.
  */
-public class ChartFragment extends Fragment implements StreamingClickInterface, XsensDotSyncCallback {
+public class DataFragment extends Fragment implements StreamingClickInterface, XsensDotSyncCallback {
 
-    private static final String TAG = ChartFragment.class.getSimpleName();
+    private static final String TAG = DataFragment.class.getSimpleName();
 
     // The code of request
     private static final int SYNCING_REQUEST_CODE = 1001;
 
-    // The view binder of ChartFragment
-    private FragmentChartBinding mBinding;
+    // The view binder of DataFragment
+    private FragmentDataBinding mBinding;
 
     // The devices view model instance
     private SensorViewModel mSensorViewModel;
-
-    // A variable for streaming flag
-    private boolean mIsStreaming = false;
 
     // A dialog during the synchronization
     private AlertDialog mSyncingDialog;
 
     /**
-     * Get the instance of ChartFragment
+     * Get the instance of DataFragment
      *
-     * @return The instance of ChartFragment
+     * @return The instance of DataFragment
      */
-    public static ChartFragment newInstance() {
+    public static DataFragment newInstance() {
 
-        return new ChartFragment();
+        return new DataFragment();
     }
 
     @Override
@@ -109,7 +107,7 @@ public class ChartFragment extends Fragment implements StreamingClickInterface, 
 
         super.onCreateView(inflater, container, savedInstanceState);
 
-        mBinding = FragmentChartBinding.inflate(LayoutInflater.from(getContext()));
+        mBinding = FragmentDataBinding.inflate(LayoutInflater.from(getContext()));
         return mBinding.getRoot();
     }
 
@@ -135,7 +133,7 @@ public class ChartFragment extends Fragment implements StreamingClickInterface, 
         super.onResume();
 
         // Notify main activity to refresh menu.
-        MainActivity.sCurrentFragment = FRAGMENT_TAG_CHART;
+        MainActivity.sCurrentFragment = FRAGMENT_TAG_DATA;
         if (getActivity() != null) getActivity().invalidateOptionsMenu();
     }
 
@@ -148,9 +146,10 @@ public class ChartFragment extends Fragment implements StreamingClickInterface, 
     @Override
     public void onStreamingTriggered() {
 
-        if (mIsStreaming) {
+        if (mSensorViewModel.isStreaming().getValue()) {
             // To stop.
-
+            setMeasurement(false);
+            mSensorViewModel.updateStreamingStatus(false);
 
         } else {
             // To start.
@@ -184,9 +183,9 @@ public class ChartFragment extends Fragment implements StreamingClickInterface, 
      */
     private void setStates(int plot, int log) {
 
-        List<XsensDotDevice> list = mSensorViewModel.getAllSensors();
+        List<XsensDotDevice> devices = mSensorViewModel.getAllSensors();
 
-        for (XsensDotDevice device : list) {
+        for (XsensDotDevice device : devices) {
 
             device.setPlotState(plot);
             device.setLogState(log);
@@ -196,12 +195,12 @@ public class ChartFragment extends Fragment implements StreamingClickInterface, 
     /**
      * Check the connection state of all sensors.
      *
-     * @param list A list contains all devices
+     * @param devices A list contains all devices
      * @return True - If all sensors are connected
      */
-    private boolean checkConnection(List<XsensDotDevice> list) {
+    private boolean checkConnection(List<XsensDotDevice> devices) {
 
-        for (XsensDotDevice device : list) {
+        for (XsensDotDevice device : devices) {
 
             final int state = device.getConnectionState();
             if (state != CONN_STATE_CONNECTED) return false;
@@ -228,11 +227,22 @@ public class ChartFragment extends Fragment implements StreamingClickInterface, 
      */
     private void setMeasurementMode(int mode) {
 
-        List<XsensDotDevice> list = mSensorViewModel.getAllSensors();
+        List<XsensDotDevice> devices = mSensorViewModel.getAllSensors();
 
-        for (XsensDotDevice device : list) {
+        for (XsensDotDevice device : devices) {
 
             device.setMeasurementMode(mode);
+        }
+    }
+
+    private void setMeasurement(boolean enabled) {
+
+        List<XsensDotDevice> devices = mSensorViewModel.getAllSensors();
+
+        for (XsensDotDevice device : devices) {
+
+            if (enabled) device.startMeasuring();
+            else device.stopMeasuring();
         }
     }
 
@@ -287,16 +297,23 @@ public class ChartFragment extends Fragment implements StreamingClickInterface, 
                         if (isSuccess) {
                             // Syncing precess is success, choose one measurement mode to start measuring.
                             setMeasurementMode(PAYLOAD_TYPE_COMPLETE_EULER);
-
-                            // TODO: 2020/8/25 Clear pages.
+                            setMeasurement(true);
+                            // Notify the current streaming status to MainActivity to refresh the menu.
+                            mSensorViewModel.updateStreamingStatus(true);
 
                         } else {
+                            // If the syncing result is fail, show a message to user
+                            Toast.makeText(getContext(), getString(R.string.hint_syncing_failed), Toast.LENGTH_LONG).show();
 
                             for (Map.Entry<String, Boolean> result : syncingResultMap.entrySet()) {
 
                                 if (!result.getValue()) {
-                                    // If the syncing result is fail, get the key of this device.
+                                    // Get the key of this failed device.
                                     String address = result.getKey();
+                                    // It's preferred to stop measurement of all sensors.
+                                    setMeasurement(false);
+                                    // Notify the current streaming status to MainActivity to refresh the menu.
+                                    mSensorViewModel.updateStreamingStatus(false);
                                 }
                             }
                         }

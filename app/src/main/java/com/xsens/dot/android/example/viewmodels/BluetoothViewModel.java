@@ -56,9 +56,9 @@ public class BluetoothViewModel extends ViewModel {
     }
 
     // A variable to notify the Bluetooth status
-    private MutableLiveData<Boolean> isBluetoothEnabled = new MutableLiveData<>();
+    private MutableLiveData<Boolean> mIsBluetoothEnabled = new MutableLiveData<>();
     // A variable to notify the scanning status
-    private MutableLiveData<Boolean> isScanning = new MutableLiveData<>();
+    private MutableLiveData<Boolean> mIsScanning = new MutableLiveData<>();
 
     /**
      * Observe this function to listen the status of Bluetooth adapter.
@@ -67,7 +67,7 @@ public class BluetoothViewModel extends ViewModel {
      */
     public MutableLiveData<Boolean> isBluetoothEnabled() {
 
-        return isBluetoothEnabled;
+        return mIsBluetoothEnabled;
     }
 
     /**
@@ -77,7 +77,7 @@ public class BluetoothViewModel extends ViewModel {
      */
     public void updateBluetoothEnableState(boolean enabled) {
 
-        isBluetoothEnabled.postValue(enabled);
+        mIsBluetoothEnabled.postValue(enabled);
     }
 
     /**
@@ -87,7 +87,7 @@ public class BluetoothViewModel extends ViewModel {
      */
     public MutableLiveData<Boolean> isScanning() {
 
-        return isScanning;
+        return mIsScanning;
     }
 
     /**
@@ -97,6 +97,6 @@ public class BluetoothViewModel extends ViewModel {
      */
     public void updateScanState(boolean scanning) {
 
-        isScanning.postValue(scanning);
+        mIsScanning.postValue(scanning);
     }
 }

@@ -74,6 +74,8 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
     private MutableLiveData<ArrayList<XsensDotDevice>> mSensorList = new MutableLiveData<>();
     // A variable to notify the connection state
     private MutableLiveData<XsensDotDevice> mConnectionUpdatedSensor = new MutableLiveData<>();
+    // A variable to notify the streaming status
+    private MutableLiveData<Boolean> mIsStreaming = new MutableLiveData<>();
 
     /**
      * Get the XsensDotDevice object from list by mac address.
@@ -215,6 +217,27 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
     public MutableLiveData<XsensDotDevice> getConnectionUpdatedDevice() {
 
         return mConnectionUpdatedSensor;
+    }
+
+    /**
+     * Observe this function to listen the streaming status.
+     *
+     * @return The latest streaming status
+     */
+    public MutableLiveData<Boolean> isStreaming() {
+
+        if (mIsStreaming.getValue() == null) mIsStreaming.setValue(false);
+        return mIsStreaming;
+    }
+
+    /**
+     * Notify the streaming status to activity/fragment
+     *
+     * @param status The status of streaming
+     */
+    public void updateStreamingStatus(boolean status) {
+
+        mIsStreaming.postValue(status);
     }
 
     @Override

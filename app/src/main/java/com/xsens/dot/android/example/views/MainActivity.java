@@ -51,6 +51,7 @@ import com.xsens.dot.android.example.interfaces.ScanClickInterface;
 import com.xsens.dot.android.example.interfaces.StreamingClickInterface;
 import com.xsens.dot.android.example.utils.Utils;
 import com.xsens.dot.android.example.viewmodels.BluetoothViewModel;
+import com.xsens.dot.android.example.viewmodels.SensorViewModel;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -70,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BLUETOOTH = 1001, REQUEST_PERMISSION_LOCATION = 1002;
 
     // The tag of fragments
-    public static final String FRAGMENT_TAG_SCAN = "scan", FRAGMENT_TAG_CHART = "chart";
+    public static final String FRAGMENT_TAG_SCAN = "scan", FRAGMENT_TAG_DATA = "data";
 
     // The view binder of MainActivity
     private ActivityMainBinding mBinding;
@@ -78,14 +79,14 @@ public class MainActivity extends AppCompatActivity {
     // The Bluetooth view model instance
     private BluetoothViewModel mBluetoothViewModel;
 
+    // The sensor view model instance
+    private SensorViewModel mSensorViewModel;
+
     // A variable for scanning flag
     private boolean mIsScanning = false;
 
     // Send the start/stop scan click event to fragment
     private ScanClickInterface mScanListener;
-
-    // A variable for streaming flag
-    private boolean mIsStreaming = false;
 
     // Send the start/stop streaming click event to fragment
     private StreamingClickInterface mStreamingListener;
@@ -173,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
 
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
         return true;
     }
 
@@ -186,18 +188,23 @@ public class MainActivity extends AppCompatActivity {
         if (mIsScanning) scanItem.setTitle(getString(R.string.menu_stop_scan));
         else scanItem.setTitle(getString(R.string.menu_start_scan));
 
+        final boolean isStreaming = mSensorViewModel.isStreaming().getValue();
+        if (isStreaming) streamingItem.setTitle(getString(R.string.menu_stop_streaming));
+        else streamingItem.setTitle(getString(R.string.menu_start_streaming));
+
         if (sCurrentFragment.equals(FRAGMENT_TAG_SCAN)) {
 
             scanItem.setVisible(true);
             streamingItem.setVisible(false);
             measureItem.setVisible(true);
 
-        } else if (sCurrentFragment.equals(FRAGMENT_TAG_CHART)) {
+        } else if (sCurrentFragment.equals(FRAGMENT_TAG_DATA)) {
 
             scanItem.setVisible(false);
             streamingItem.setVisible(true);
             measureItem.setVisible(false);
         }
+
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -218,14 +225,14 @@ public class MainActivity extends AppCompatActivity {
                 break;
 
             case R.id.action_streaming:
-                // When the streaming button is clicked, notify to ChartFragment and wait for the syncing result.
+                // When the streaming button is clicked, notify to DataFragment and wait for the syncing result.
                 mStreamingListener.onStreamingTriggered();
                 break;
 
             case R.id.action_measure:
-                // Change to ChartFragment and put ScanFragment to the back stack.
-                Fragment chartFragment = ChartFragment.newInstance();
-                addFragment(chartFragment, FRAGMENT_TAG_CHART);
+                // Change to DataFragment and put ScanFragment to the back stack.
+                Fragment dataFragment = DataFragment.newInstance();
+                addFragment(dataFragment, FRAGMENT_TAG_DATA);
                 break;
         }
 
@@ -289,6 +296,17 @@ public class MainActivity extends AppCompatActivity {
             public void onChanged(Boolean scanning) {
                 // If the status of scanning is changed, try to refresh the menu.
                 mIsScanning = scanning;
+                invalidateOptionsMenu();
+            }
+        });
+
+        mSensorViewModel = SensorViewModel.getInstance(this);
+
+        mSensorViewModel.isStreaming().observe(this, new Observer<Boolean>() {
+
+            @Override
+            public void onChanged(Boolean status) {
+                // If the status of streaming is changed, try to refresh the menu.
                 invalidateOptionsMenu();
             }
         });

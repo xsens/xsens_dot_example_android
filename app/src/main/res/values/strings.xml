@@ -5,6 +5,7 @@
     <string name="hint_turn_on_bluetooth">Please turn on the Bluetooth adapter</string>
     <string name="hint_allow_location">Please allow location permission to use sensor(s)</string>
     <string name="hint_connecting">Please wait for the connection result...</string>
+    <string name="hint_syncing_failed">Put sensors as close as possible and try again.</string>
 
     <string name="menu_start_scan">Scan</string>
     <string name="menu_stop_scan">Stop Scanning</string>
