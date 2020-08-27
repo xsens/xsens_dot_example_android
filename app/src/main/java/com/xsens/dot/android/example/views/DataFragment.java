@@ -42,32 +42,38 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.xsens.dot.android.example.R;
+import com.xsens.dot.android.example.adapters.DataAdapter;
 import com.xsens.dot.android.example.databinding.FragmentDataBinding;
+import com.xsens.dot.android.example.interfaces.DataChangeInterface;
 import com.xsens.dot.android.example.interfaces.StreamingClickInterface;
 import com.xsens.dot.android.example.viewmodels.SensorViewModel;
+import com.xsens.dot.android.sdk.events.XsensDotData;
 import com.xsens.dot.android.sdk.interfaces.XsensDotSyncCallback;
 import com.xsens.dot.android.sdk.models.XsensDotDevice;
 import com.xsens.dot.android.sdk.models.XsensDotSyncManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
+import static com.xsens.dot.android.example.adapters.DataAdapter.KEY_ADDRESS;
+import static com.xsens.dot.android.example.adapters.DataAdapter.KEY_DATA;
+import static com.xsens.dot.android.example.adapters.DataAdapter.KEY_TAG;
 import static com.xsens.dot.android.example.views.MainActivity.FRAGMENT_TAG_DATA;
-import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.LOG_STATE_ON;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.PLOT_STATE_ON;
 import static com.xsens.dot.android.sdk.models.XsensDotPayload.PAYLOAD_TYPE_COMPLETE_EULER;
 
 /**
- * A fragment for presenting the raw-data and storing to file.
+ * A fragment for presenting the data and storing to file.
  */
-public class DataFragment extends Fragment implements StreamingClickInterface, XsensDotSyncCallback {
+public class DataFragment extends Fragment implements StreamingClickInterface, DataChangeInterface, XsensDotSyncCallback {
 
     private static final String TAG = DataFragment.class.getSimpleName();
 
@@ -79,6 +85,12 @@ public class DataFragment extends Fragment implements StreamingClickInterface, X
 
     // The devices view model instance
     private SensorViewModel mSensorViewModel;
+
+    // The adapter for data item
+    private DataAdapter mDataAdapter;
+
+    // A list contains tag and data from each sensor
+    private ArrayList<HashMap<String, Object>> mDataList = new ArrayList<>();
 
     // A dialog during the synchronization
     private AlertDialog mSyncingDialog;
@@ -116,11 +128,15 @@ public class DataFragment extends Fragment implements StreamingClickInterface, X
 
         super.onActivityCreated(savedInstanceState);
 
-        setStates(PLOT_STATE_ON, LOG_STATE_ON);
+        mSensorViewModel.setStates(PLOT_STATE_ON, LOG_STATE_ON);
+
+        mDataAdapter = new DataAdapter(getContext(), mDataList);
+        mBinding.dataRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        mBinding.dataRecyclerView.setItemAnimator(new DefaultItemAnimator());
+        mBinding.dataRecyclerView.setAdapter(mDataAdapter);
 
         AlertDialog.Builder syncingDialogBuilder = new AlertDialog.Builder(getActivity());
         syncingDialogBuilder.setView(R.layout.dialog_syncing);
-        syncingDialogBuilder.setCancelable(false);
         mSyncingDialog = syncingDialogBuilder.create();
 
         // Set the StreamingClickInterface instance to main activity.
@@ -137,10 +153,18 @@ public class DataFragment extends Fragment implements StreamingClickInterface, X
         if (getActivity() != null) getActivity().invalidateOptionsMenu();
     }
 
-    @Override
-    public void onDestroy() {
 
-        super.onDestroy();
+    @Override
+    public void onDetach() {
+
+        super.onDetach();
+
+        // Stop measurement for each sensor when exiting this page.
+        mSensorViewModel.setMeasurement(false);
+        // It's necessary to update this status, because user may enter this page
+        mSensorViewModel.updateStreamingStatus(false);
+
+        // TODO: 2020/8/27 Close files.
     }
 
     @Override
@@ -148,18 +172,19 @@ public class DataFragment extends Fragment implements StreamingClickInterface, X
 
         if (mSensorViewModel.isStreaming().getValue()) {
             // To stop.
-            setMeasurement(false);
+            mSensorViewModel.setMeasurement(false);
             mSensorViewModel.updateStreamingStatus(false);
 
         } else {
             // To start.
-            final ArrayList<XsensDotDevice> devices = mSensorViewModel.getAllSensors();
-            if (!checkConnection(devices)) return;
+            if (!mSensorViewModel.checkConnection()) return;
 
             // Set first device to root.
-            setRootDevice(devices, true);
+            mSensorViewModel.setRootDevice(true);
+            final ArrayList<XsensDotDevice> devices = mSensorViewModel.getAllSensors();
             // Devices will disconnect during the syncing, and do reconnection automatically.
             XsensDotSyncManager.getInstance(this).startSyncing(devices, SYNCING_REQUEST_CODE);
+
             if (!mSyncingDialog.isShowing()) mSyncingDialog.show();
         }
     }
@@ -172,77 +197,8 @@ public class DataFragment extends Fragment implements StreamingClickInterface, X
         if (getActivity() != null) {
 
             mSensorViewModel = SensorViewModel.getInstance(getActivity());
-        }
-    }
-
-    /**
-     * Set the plotting and logging states for each device.
-     *
-     * @param plot
-     * @param log
-     */
-    private void setStates(int plot, int log) {
-
-        List<XsensDotDevice> devices = mSensorViewModel.getAllSensors();
-
-        for (XsensDotDevice device : devices) {
-
-            device.setPlotState(plot);
-            device.setLogState(log);
-        }
-    }
-
-    /**
-     * Check the connection state of all sensors.
-     *
-     * @param devices A list contains all devices
-     * @return True - If all sensors are connected
-     */
-    private boolean checkConnection(List<XsensDotDevice> devices) {
-
-        for (XsensDotDevice device : devices) {
-
-            final int state = device.getConnectionState();
-            if (state != CONN_STATE_CONNECTED) return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Set one sensor for root of synchronization.
-     *
-     * @param devices A list contains all devices
-     * @param isRoot  True - If set to root
-     */
-    private void setRootDevice(List<XsensDotDevice> devices, boolean isRoot) {
-
-        if (devices.size() > 0) devices.get(0).setRootDevice(isRoot);
-    }
-
-    /**
-     * Set the measurement mode to all sensors.
-     *
-     * @param mode The measurement mode
-     */
-    private void setMeasurementMode(int mode) {
-
-        List<XsensDotDevice> devices = mSensorViewModel.getAllSensors();
-
-        for (XsensDotDevice device : devices) {
-
-            device.setMeasurementMode(mode);
-        }
-    }
-
-    private void setMeasurement(boolean enabled) {
-
-        List<XsensDotDevice> devices = mSensorViewModel.getAllSensors();
-
-        for (XsensDotDevice device : devices) {
-
-            if (enabled) device.startMeasuring();
-            else device.stopMeasuring();
+            // Implement DataChangeInterface and override onDataChanged() function to receive data.
+            mSensorViewModel.setDataChangeCallback(this);
         }
     }
 
@@ -291,13 +247,13 @@ public class DataFragment extends Fragment implements StreamingClickInterface, X
 
                         if (mSyncingDialog.isShowing()) mSyncingDialog.dismiss();
 
-                        final ArrayList<XsensDotDevice> devices = mSensorViewModel.getAllSensors();
-                        setRootDevice(devices, false);
+                        mSensorViewModel.setRootDevice(false);
 
                         if (isSuccess) {
                             // Syncing precess is success, choose one measurement mode to start measuring.
-                            setMeasurementMode(PAYLOAD_TYPE_COMPLETE_EULER);
-                            setMeasurement(true);
+                            mSensorViewModel.setMeasurementMode(PAYLOAD_TYPE_COMPLETE_EULER);
+                            // TODO: 2020/8/26 Create files.
+                            mSensorViewModel.setMeasurement(true);
                             // Notify the current streaming status to MainActivity to refresh the menu.
                             mSensorViewModel.updateStreamingStatus(true);
 
@@ -311,7 +267,7 @@ public class DataFragment extends Fragment implements StreamingClickInterface, X
                                     // Get the key of this failed device.
                                     String address = result.getKey();
                                     // It's preferred to stop measurement of all sensors.
-                                    setMeasurement(false);
+                                    mSensorViewModel.setMeasurement(false);
                                     // Notify the current streaming status to MainActivity to refresh the menu.
                                     mSensorViewModel.updateStreamingStatus(false);
                                 }
@@ -320,6 +276,47 @@ public class DataFragment extends Fragment implements StreamingClickInterface, X
                     }
                 });
             }
+        }
+    }
+
+    @Override
+    public void onDataChanged(String address, XsensDotData data) {
+
+        Log.i(TAG, "onDataChanged() - address = " + address);
+
+        boolean isExist = false;
+
+        for (HashMap<String, Object> map : mDataList) {
+
+            String _address = (String) map.get(KEY_ADDRESS);
+            if (_address.equals(address)) {
+                // If the data is exist, try to update it.
+                map.put(KEY_DATA, data);
+                isExist = true;
+                break;
+            }
+        }
+
+        if (!isExist) {
+            // It's the first data of this sensor, create a new set and add it.
+            HashMap<String, Object> map = new HashMap<>();
+            map.put(KEY_ADDRESS, address);
+            map.put(KEY_TAG, mSensorViewModel.getTag(address));
+            map.put(KEY_DATA, data);
+            mDataList.add(map);
+        }
+
+        // TODO: 2020/8/27 Update file.
+
+        if (getActivity() != null) {
+
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    // The data is coming from background thread, change to UI thread for updating.
+                    mDataAdapter.notifyDataSetChanged();
+                }
+            });
         }
     }
 }

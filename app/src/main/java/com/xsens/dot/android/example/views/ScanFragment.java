@@ -165,7 +165,15 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
 
         // Stop scanning to let other apps to use scan function.
         if (mXsDotScanner != null) mXsDotScanner.stopScan();
-        // Release all connections when app is destroying.
+        mBluetoothViewModel.updateScanState(false);
+    }
+
+    @Override
+    public void onDetach() {
+
+        super.onDetach();
+
+        // Release all connections when app is destroyed.
         mSensorViewModel.disconnectAllSensors();
     }
 

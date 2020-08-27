@@ -53,7 +53,7 @@ import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONN
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_RECONNECTING;
 
 /**
- * A view adapter for item view of scanned BLE device..
+ * A view adapter for item view of scanned BLE device.
  */
 public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder> {
 
@@ -68,7 +68,7 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
     // Send the click event to fragment
     private SensorClickInterface mListener;
 
-    // Put all scanned deviceS into one list
+    // Put all scanned devices into one list
     private ArrayList<HashMap<String, Object>> mSensorList;
 
     /**

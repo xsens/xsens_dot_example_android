@@ -18,5 +18,11 @@
     <string name="connected">Connected</string>
     <string name="reconnecting">Reconnecting</string>
     <string name="syncing">Syncing</string>
+    <string name="mode">Mode:</string>
+    <string name="file_path">File path:</string>
+    <string name="mode_complete_euler">Complete (Euler)</string>
+    <string name="name">Name:</string>
+    <string name="orientation">Orientation (deg):</string>
+    <string name="free_acc">Free Acceleration (m/s2):</string>
 
 </resources>
