@@ -164,6 +164,36 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
     }
 
     /**
+     * Get the connection state of device.
+     *
+     * @param position The position of item view
+     * @return The connection state
+     */
+    public int getConnectionState(int position) {
+
+        if (mSensorList != null) {
+
+            return (int) mSensorList.get(position).get(KEY_STATE);
+        }
+
+        return CONN_STATE_DISCONNECTED;
+    }
+
+    /**
+     * Update the connection state to list.
+     *
+     * @param position The position of item view
+     * @param state    The connection state
+     */
+    public void updateConnectionState(int position, int state) {
+
+        if (mSensorList != null) {
+
+            mSensorList.get(position).put(KEY_STATE, state);
+        }
+    }
+
+    /**
      * Initialize click listener of item view.
      *
      * @param listener The fragment which implemented SensorClickInterface

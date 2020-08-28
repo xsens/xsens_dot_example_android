@@ -66,7 +66,9 @@ import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_DEVICE;
 import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_STATE;
 import static com.xsens.dot.android.example.views.MainActivity.FRAGMENT_TAG_SCAN;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTING;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_RECONNECTING;
 
 /**
  * A fragment for scanned item.
@@ -141,7 +143,6 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
         AlertDialog.Builder connectionDialogBuilder = new AlertDialog.Builder(getActivity());
         connectionDialogBuilder.setTitle(getString(R.string.connecting));
         connectionDialogBuilder.setMessage(getString(R.string.hint_connecting));
-        connectionDialogBuilder.setCancelable(false);
         mConnectionDialog = connectionDialogBuilder.create();
 
         // Set the SensorClickInterface instance to main activity.
@@ -183,6 +184,9 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
         if (triggered) {
             // Disconnect to all sensors to make sure the connection has been released.
             mSensorViewModel.disconnectAllSensors();
+            // This line is for connecting and reconnecting device.
+            // Because they don't triggered onXsensDotConnectionChanged() function to remove sensor from list.
+            mSensorViewModel.removeAllDevice();
 
             mScannedSensorList.clear();
             mScanAdapter.notifyDataSetChanged();
@@ -231,34 +235,49 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
         // Notify main activity to update the scan button.
         mBluetoothViewModel.updateScanState(false);
 
+        int state = mScanAdapter.getConnectionState(position);
         BluetoothDevice device = mScanAdapter.getDevice(position);
-        XsensDotDevice xsDevice = mSensorViewModel.getSensor(device.getAddress());
 
-        if (xsDevice != null) {
+        /**
+         * state = 0 : Disconnected
+         * state = 1 : Connecting
+         * state = 2 : Connected
+         * state = 4 : Reconnecting
+         */
+        switch (state) {
 
-            /**
-             * state = 0 : Disconnected
-             * state = 1 : Connecting
-             * state = 2 : Connected
-             * state = 4 : Reconnecting
-             */
-            final int state = xsDevice.getConnectionState();
-
-            if (state == CONN_STATE_DISCONNECTED) {
+            case CONN_STATE_DISCONNECTED:
 
                 mConnectionDialog.show();
+                // The sensor isn't exist in the mSensorList(SensorViewModel), try to connect and add it.
                 mSensorViewModel.connectSensor(getContext(), device);
+                break;
 
-            } else {
+            case CONN_STATE_CONNECTING:
+
+                mScanAdapter.updateConnectionState(position, CONN_STATE_DISCONNECTED);
+                mScanAdapter.notifyItemChanged(position);
+                // This line is necessary to close Bluetooth gatt.
+                mSensorViewModel.disconnectSensor(device.getAddress());
+                // Remove this sensor from device list.
+                mSensorViewModel.removeDevice(device.getAddress());
+                break;
+
+            case CONN_STATE_CONNECTED:
 
                 mSensorViewModel.disconnectSensor(device.getAddress());
-            }
+                // No need to call removeDevice() function, just wait for onXsensDotConnectionChanged() callback function.
+                break;
 
-        } else {
+            case CONN_STATE_RECONNECTING:
 
-            mConnectionDialog.show();
-            // The XsensDotDevice isn't exist in the mSensorList(SensorViewModel), try to connect and add it.
-            mSensorViewModel.connectSensor(getContext(), device);
+                mScanAdapter.updateConnectionState(position, CONN_STATE_DISCONNECTED);
+                mScanAdapter.notifyItemChanged(position);
+                // This line is necessary to close Bluetooth gatt.
+                mSensorViewModel.cancelReconnection(device.getAddress());
+                // Remove this sensor from device list.
+                mSensorViewModel.removeDevice(device.getAddress());
+                break;
         }
     }
 

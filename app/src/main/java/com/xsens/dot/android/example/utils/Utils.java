@@ -38,11 +38,22 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Looper;
 
 /**
  * This class is for some additional feature, such as: check Bluetooth adapter, check location premission...etc.
  */
 public class Utils {
+
+    /**
+     * Check the current thread is main thread or background thread.
+     *
+     * @return True - If running on main thread
+     */
+    public static boolean isMainThread() {
+
+        return Looper.myLooper() == Looper.getMainLooper();
+    }
 
     /**
      * Check the Bluetooth adapter is enabled or not.

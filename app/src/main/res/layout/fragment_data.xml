@@ -28,24 +28,24 @@
         app:layout_constraintStart_toEndOf="@+id/mode_label" />
 
     <TextView
-        android:id="@+id/file_path_label"
+        android:id="@+id/sync_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="@string/file_path"
+        android:text="@string/sync_status"
         android:textStyle="bold"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintStart_toStartOf="@+id/mode_label"
         app:layout_constraintTop_toBottomOf="@+id/mode_label" />
 
     <TextView
-        android:id="@+id/file_path"
+        android:id="@+id/sync_result"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
         android:text="-"
-        app:layout_constraintBottom_toBottomOf="@+id/file_path_label"
-        app:layout_constraintStart_toEndOf="@+id/file_path_label"
+        app:layout_constraintBottom_toBottomOf="@+id/sync_label"
+        app:layout_constraintStart_toEndOf="@+id/sync_label"
         tools:ignore="HardcodedText" />
 
     <androidx.recyclerview.widget.RecyclerView
@@ -56,6 +56,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/file_path" />
+        app:layout_constraintTop_toBottomOf="@+id/sync_result" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

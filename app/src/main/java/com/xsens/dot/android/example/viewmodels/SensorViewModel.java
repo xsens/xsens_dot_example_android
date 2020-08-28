@@ -41,6 +41,7 @@ import com.xsens.dot.android.sdk.interfaces.XsensDotDeviceCallback;
 import com.xsens.dot.android.sdk.models.XsensDotDevice;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
@@ -70,6 +71,9 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
 
         return new ViewModelProvider(owner, new ViewModelProvider.NewInstanceFactory()).get(SensorViewModel.class);
     }
+
+    // A variable to queue multiple threads.
+    private static final Object LOCKER = new Object();
 
     // A callback function to notify data changes event
     private DataChangeInterface mDataChangeInterface;
@@ -132,8 +136,8 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
     public void connectSensor(Context context, BluetoothDevice device) {
 
         XsensDotDevice xsDevice = new XsensDotDevice(context, device, this);
-        xsDevice.connect();
         addDevice(xsDevice);
+        xsDevice.connect();
     }
 
     /**
@@ -163,9 +167,33 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
 
         if (mSensorList.getValue() != null) {
 
+            synchronized (LOCKER) {
+
+                for (Iterator<XsensDotDevice> it = mSensorList.getValue().iterator(); it.hasNext(); ) {
+                    // Use Iterator to make sure it's thread safety.
+                    XsensDotDevice device = it.next();
+                    device.disconnect();
+                }
+            }
+        }
+    }
+
+    /**
+     * Cancel reconnection of one sensor.
+     *
+     * @param address The mac address of device
+     */
+    public void cancelReconnection(String address) {
+
+        if (mSensorList.getValue() != null) {
+
             for (XsensDotDevice device : mSensorList.getValue()) {
 
-                device.disconnect();
+                if (device.getAddress().equals(address)) {
+
+                    device.cancelReconnecting();
+                    break;
+                }
             }
         }
     }
@@ -312,7 +340,7 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
      *
      * @param address The mac address of device
      */
-    private void removeDevice(String address) {
+    public void removeDevice(String address) {
 
         if (mSensorList.getValue() == null) {
 
@@ -320,18 +348,30 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
             return;
         }
 
-        final ArrayList<XsensDotDevice> devices = mSensorList.getValue();
-        final XsensDotDevice xsDevice = getSensor(address);
+        synchronized (LOCKER) {
 
-        if (xsDevice != null) {
+            for (Iterator<XsensDotDevice> it = mSensorList.getValue().iterator(); it.hasNext(); ) {
+                // Use Iterator to make sure it's thread safety.
+                XsensDotDevice device = it.next();
+                if (device.getAddress().equals(address)) {
 
-            for (XsensDotDevice _xsDevice : devices) {
-
-                if (xsDevice.getAddress().equals(_xsDevice.getAddress())) {
-
-                    devices.remove(_xsDevice);
+                    it.remove();
                     break;
                 }
+            }
+        }
+    }
+
+    /**
+     * Remove all sensor from device list directly.
+     */
+    public void removeAllDevice() {
+
+        if (mSensorList.getValue() != null) {
+
+            synchronized (LOCKER) {
+
+                mSensorList.getValue().clear();
             }
         }
     }
@@ -379,7 +419,9 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
 
             case CONN_STATE_DISCONNECTED:
 
-                removeDevice(address);
+                synchronized (this) {
+                    removeDevice(address);
+                }
                 break;
 
             case CONN_STATE_CONNECTING:

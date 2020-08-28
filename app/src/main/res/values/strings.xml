@@ -2,10 +2,11 @@
 
     <string name="app_name">Xsens DOT Example</string>
 
-    <string name="hint_turn_on_bluetooth">Please turn on the Bluetooth adapter</string>
-    <string name="hint_allow_location">Please allow location permission to use sensor(s)</string>
+    <string name="hint_turn_on_bluetooth">Please turn on the Bluetooth adapter.</string>
+    <string name="hint_allow_location">Please allow location permission to use sensor(s).</string>
     <string name="hint_connecting">Please wait for the connection result...</string>
     <string name="hint_syncing_failed">Put sensors as close as possible and try again.</string>
+    <string name="hint_check_connection">Some sensors are disconnected. Please check the connection.</string>
 
     <string name="menu_start_scan">Scan</string>
     <string name="menu_stop_scan">Stop Scanning</string>
@@ -19,7 +20,9 @@
     <string name="reconnecting">Reconnecting</string>
     <string name="syncing">Syncing</string>
     <string name="mode">Mode:</string>
-    <string name="file_path">File path:</string>
+    <string name="sync_status">Sync status:</string>
+    <string name="sync_result_success">Success</string>
+    <string name="sync_result_fail">Fail</string>
     <string name="mode_complete_euler">Complete (Euler)</string>
     <string name="name">Name:</string>
     <string name="orientation">Orientation (deg):</string>
