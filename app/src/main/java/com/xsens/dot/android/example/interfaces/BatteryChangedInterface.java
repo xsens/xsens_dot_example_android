@@ -29,40 +29,19 @@
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
 
-package com.xsens.dot.android.example.apps;
-
-import android.app.Application;
-import android.util.Log;
-
-import com.xsens.dot.android.sdk.XsensDotSdk;
+package com.xsens.dot.android.example.interfaces;
 
 /**
- * A customized application class for basic initialization.
+ * This class is to react battery changes event between fragment and view model.
  */
-public class XsensDotApplication extends Application {
-
-    private static final String TAG = XsensDotApplication.class.getSimpleName();
-
-    @Override
-    public void onCreate() {
-
-        super.onCreate();
-
-        initXsensDotSdk();
-    }
+public interface BatteryChangedInterface {
 
     /**
-     * Setup for Xsens DOT SDK.
+     * This function will be triggered when the battery information of sensor is changed.
+     *
+     * @param address    The mac address of device
+     * @param status     This state can be one of BATT_STATE_NOT_CHARGING or BATT_STATE_CHARGING
+     * @param percentage The range of battery level is 0 to 100
      */
-    private void initXsensDotSdk() {
-
-        // Get the version name of SDK.
-        String version = XsensDotSdk.getSdkVersion();
-        Log.i(TAG, "initXsensDotSdk() - version: " + version);
-
-        // Enable this feature to monitor logs from SDK.
-        XsensDotSdk.setDebugEnabled(true);
-        // Enable this feature then SDK will start reconnection when the connection is lost.
-        XsensDotSdk.setReconnectEnabled(true);
-    }
+    void onBatteryChanged(String address, int status, int percentage);
 }

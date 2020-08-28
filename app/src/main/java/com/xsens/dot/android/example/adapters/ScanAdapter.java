@@ -47,6 +47,7 @@ import java.util.HashMap;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import static com.xsens.dot.android.sdk.models.XsensDotDevice.BATT_STATE_CHARGING;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTING;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_DISCONNECTED;
@@ -60,7 +61,12 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
     private static final String TAG = ScanAdapter.class.getSimpleName();
 
     // The keys of HashMap
-    public static final String KEY_DEVICE = "device", KEY_STATE = "state";
+    public static final String
+            KEY_DEVICE = "device",
+            KEY_CONNECTION_STATE = "state",
+            KEY_TAG = "tag",
+            KEY_BATTERY_STATE = "battery_state",
+            KEY_BATTERY_PERCENTAGE = "battery_percentage";
 
     // The application context
     private Context mContext;
@@ -98,11 +104,25 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
 
         if (device != null) {
 
-            holder.sensorName.setText(device.getName());
+            String tag = (String) mSensorList.get(position).get(KEY_TAG);
+
+            if (tag != null) holder.sensorName.setText(tag.isEmpty() ? device.getName() : tag);
+            else holder.sensorName.setText(device.getName());
+
+            int batteryPercentage = (int) mSensorList.get(position).get(KEY_BATTERY_PERCENTAGE);
+            int batteryState = (int) mSensorList.get(position).get(KEY_BATTERY_STATE);
+
+            String batteryStr = "";
+            if (batteryPercentage != -1)
+                batteryStr = batteryPercentage + "% ";
+            if (batteryState == BATT_STATE_CHARGING)
+                batteryStr = batteryStr + mContext.getString(R.string.batt_state_charging);
+
+            holder.sensorBattery.setText(batteryStr);
             holder.sensorMacAddress.setText(device.getAddress());
         }
 
-        int state = (int) mSensorList.get(position).get(KEY_STATE);
+        int state = (int) mSensorList.get(position).get(KEY_CONNECTION_STATE);
         // Update connection result on the screen.
         switch (state) {
 
@@ -173,7 +193,7 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
 
         if (mSensorList != null) {
 
-            return (int) mSensorList.get(position).get(KEY_STATE);
+            return (int) mSensorList.get(position).get(KEY_CONNECTION_STATE);
         }
 
         return CONN_STATE_DISCONNECTED;
@@ -189,7 +209,59 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
 
         if (mSensorList != null) {
 
-            mSensorList.get(position).put(KEY_STATE, state);
+            mSensorList.get(position).put(KEY_CONNECTION_STATE, state);
+        }
+    }
+
+    /**
+     * Update tag name to the list.
+     *
+     * @param address The mac address of device
+     * @param tag     The device tag
+     */
+    public void updateTag(String address, String tag) {
+
+        if (mSensorList != null) {
+
+            for (HashMap<String, Object> map : mSensorList) {
+
+                BluetoothDevice device = (BluetoothDevice) map.get(KEY_DEVICE);
+                if (device != null) {
+
+                    String _address = device.getAddress();
+                    if (_address.equals(address)) {
+
+                        map.put(KEY_TAG, tag);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Update battery information to the list.
+     *
+     * @param address    The mac address of device
+     * @param state      This state can be one of BATT_STATE_NOT_CHARGING or BATT_STATE_CHARGING
+     * @param percentage The range of battery level is 0 to 100
+     */
+    public void updateBattery(String address, int state, int percentage) {
+
+        if (mSensorList != null) {
+
+            for (HashMap<String, Object> map : mSensorList) {
+
+                BluetoothDevice device = (BluetoothDevice) map.get(KEY_DEVICE);
+                if (device != null) {
+
+                    String _address = device.getAddress();
+                    if (_address.equals(address)) {
+
+                        map.put(KEY_BATTERY_STATE, state);
+                        map.put(KEY_BATTERY_PERCENTAGE, percentage);
+                    }
+                }
+            }
         }
     }
 
@@ -211,6 +283,7 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
         View rootView;
         TextView sensorName;
         TextView sensorMacAddress;
+        TextView sensorBattery;
         TextView sensorState;
 
         ScanViewHolder(View v) {
@@ -220,6 +293,7 @@ public class ScanAdapter extends RecyclerView.Adapter<ScanAdapter.ScanViewHolder
             rootView = v;
             sensorName = v.findViewById(R.id.sensor_name);
             sensorMacAddress = v.findViewById(R.id.sensor_mac_address);
+            sensorBattery = v.findViewById(R.id.sensor_battery);
             sensorState = v.findViewById(R.id.sensor_state);
         }
     }

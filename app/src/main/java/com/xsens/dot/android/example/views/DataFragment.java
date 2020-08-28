@@ -33,6 +33,7 @@ package com.xsens.dot.android.example.views;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -155,6 +156,15 @@ public class DataFragment extends Fragment implements StreamingClickInterface, D
         syncingDialogBuilder.setView(R.layout.dialog_syncing);
         syncingDialogBuilder.setCancelable(false);
         mSyncingDialog = syncingDialogBuilder.create();
+        mSyncingDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+
+                ProgressBar bar = mSyncingDialog.findViewById(R.id.syncing_progress);
+                // Reset progress to 0 for next time to use.
+                if (bar != null) bar.setProgress(0);
+            }
+        });
 
         // Set the StreamingClickInterface instance to main activity.
         if (getActivity() != null) ((MainActivity) getActivity()).setStreamingTriggerListener(this);
@@ -169,7 +179,6 @@ public class DataFragment extends Fragment implements StreamingClickInterface, D
         MainActivity.sCurrentFragment = FRAGMENT_TAG_DATA;
         if (getActivity() != null) getActivity().invalidateOptionsMenu();
     }
-
 
     @Override
     public void onDetach() {
@@ -347,7 +356,7 @@ public class DataFragment extends Fragment implements StreamingClickInterface, D
                         public void run() {
                             // Find the view of progress bar in dialog layout and update.
                             ProgressBar bar = mSyncingDialog.findViewById(R.id.syncing_progress);
-                            bar.setProgress(progress);
+                            if (bar != null) bar.setProgress(progress);
                         }
                     });
                 }

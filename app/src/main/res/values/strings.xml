@@ -18,6 +18,7 @@
     <string name="connecting">Connecting</string>
     <string name="connected">Connected</string>
     <string name="reconnecting">Reconnecting</string>
+    <string name="batt_state_charging">Charging</string>
     <string name="syncing">Syncing</string>
     <string name="mode">Mode:</string>
     <string name="sync_status">Sync status:</string>

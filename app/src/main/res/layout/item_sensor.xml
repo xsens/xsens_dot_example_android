@@ -15,6 +15,15 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
+        android:id="@+id/sensor_battery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="@+id/sensor_name"
+        app:layout_constraintStart_toEndOf="@+id/sensor_name" />
+
+    <TextView
         android:id="@+id/sensor_mac_address"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

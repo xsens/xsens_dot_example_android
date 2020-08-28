@@ -44,6 +44,7 @@ import android.view.ViewGroup;
 import com.xsens.dot.android.example.R;
 import com.xsens.dot.android.example.adapters.ScanAdapter;
 import com.xsens.dot.android.example.databinding.FragmentScanBinding;
+import com.xsens.dot.android.example.interfaces.BatteryChangedInterface;
 import com.xsens.dot.android.example.interfaces.ScanClickInterface;
 import com.xsens.dot.android.example.interfaces.SensorClickInterface;
 import com.xsens.dot.android.example.viewmodels.BluetoothViewModel;
@@ -62,8 +63,11 @@ import androidx.lifecycle.Observer;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_BATTERY_PERCENTAGE;
+import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_BATTERY_STATE;
+import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_CONNECTION_STATE;
 import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_DEVICE;
-import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_STATE;
+import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_TAG;
 import static com.xsens.dot.android.example.views.MainActivity.FRAGMENT_TAG_SCAN;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTING;
@@ -73,7 +77,7 @@ import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_RECONNE
 /**
  * A fragment for scanned item.
  */
-public class ScanFragment extends Fragment implements XsensDotScannerCallback, SensorClickInterface, ScanClickInterface {
+public class ScanFragment extends Fragment implements XsensDotScannerCallback, SensorClickInterface, ScanClickInterface, BatteryChangedInterface {
 
     private static final String TAG = ScanFragment.class.getSimpleName();
 
@@ -217,9 +221,14 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
 
             if (!isExist) {
 
+                // The original connection state is Disconnected.
+                // Also set tag, battery state, battery percentage to default value.
                 HashMap<String, Object> map = new HashMap<>();
                 map.put(KEY_DEVICE, device);
-                map.put(KEY_STATE, CONN_STATE_DISCONNECTED);
+                map.put(KEY_CONNECTION_STATE, CONN_STATE_DISCONNECTED);
+                map.put(KEY_TAG, "");
+                map.put(KEY_BATTERY_STATE, -1);
+                map.put(KEY_BATTERY_PERCENTAGE, -1);
                 mScannedSensorList.add(map);
 
                 mScanAdapter.notifyItemInserted(mScannedSensorList.size() - 1);
@@ -307,14 +316,14 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
                 }
             });
 
-            mSensorViewModel.getConnectionUpdatedDevice().observe(this, new Observer<XsensDotDevice>() {
+            mSensorViewModel.getConnectionChangedDevice().observe(this, new Observer<XsensDotDevice>() {
 
                 @Override
                 public void onChanged(XsensDotDevice device) {
 
                     String address = device.getAddress();
                     int state = device.getConnectionState();
-                    Log.d(TAG, "getConnectionUpdatedDevice() - address = " + address + ", state = " + state);
+                    Log.d(TAG, "getConnectionChangedDevice() - address = " + address + ", state = " + state);
 
                     for (HashMap<String, Object> map : mScannedSensorList) {
 
@@ -326,7 +335,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
                             // Update connection state by the same mac address.
                             if (_address.equals(address)) {
 
-                                map.put(KEY_STATE, state);
+                                map.put(KEY_CONNECTION_STATE, state);
                                 mScanAdapter.notifyDataSetChanged();
                             }
                         }
@@ -341,6 +350,22 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
                     }
                 }
             });
+
+            mSensorViewModel.getTagChangedDevice().observe(this, new Observer<XsensDotDevice>() {
+
+                @Override
+                public void onChanged(XsensDotDevice device) {
+
+                    String address = device.getAddress();
+                    String tag = device.getTag();
+
+                    mScanAdapter.updateTag(address, tag);
+                    mScanAdapter.notifyDataSetChanged();
+                    Log.d(TAG, "getTagChangedDevice() - address = " + address + ", tag = " + tag);
+                }
+            });
+
+            mSensorViewModel.setBatteryChangedCallback(this);
         }
     }
 
@@ -353,6 +378,25 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
 
             mXsDotScanner = new XsensDotScanner(getContext(), this);
             mXsDotScanner.setScanMode(ScanSettings.SCAN_MODE_BALANCED);
+        }
+    }
+
+    @Override
+    public void onBatteryChanged(String address, int state, int percentage) {
+
+        Log.d(TAG, "onBatteryChanged() - address = " + address + ", state = " + state + ", percentage = " + percentage);
+
+        mScanAdapter.updateBattery(address, state, percentage);
+
+        if (getActivity() != null) {
+            // This event is coming from background thread, use UI thread to update item.
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+
+                    mScanAdapter.notifyDataSetChanged();
+                }
+            });
         }
     }
 }

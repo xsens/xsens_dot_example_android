@@ -35,6 +35,7 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.util.Log;
 
+import com.xsens.dot.android.example.interfaces.BatteryChangedInterface;
 import com.xsens.dot.android.example.interfaces.DataChangeInterface;
 import com.xsens.dot.android.sdk.events.XsensDotData;
 import com.xsens.dot.android.sdk.interfaces.XsensDotDeviceCallback;
@@ -75,13 +76,17 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
     // A variable to queue multiple threads.
     private static final Object LOCKER = new Object();
 
+    // A callback function to notify battery information
+    private BatteryChangedInterface mBatteryChangeInterface;
     // A callback function to notify data changes event
     private DataChangeInterface mDataChangeInterface;
 
     // A list contains XsensDotDevice
     private MutableLiveData<ArrayList<XsensDotDevice>> mSensorList = new MutableLiveData<>();
     // A variable to notify the connection state
-    private MutableLiveData<XsensDotDevice> mConnectionUpdatedSensor = new MutableLiveData<>();
+    private MutableLiveData<XsensDotDevice> mConnectionChangedSensor = new MutableLiveData<>();
+    // A variable to notify the tag name
+    private MutableLiveData<XsensDotDevice> mTagChangedSensor = new MutableLiveData<>();
     // A variable to notify the streaming status
     private MutableLiveData<Boolean> mIsStreaming = new MutableLiveData<>();
 
@@ -93,6 +98,16 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
     public void setDataChangeCallback(DataChangeInterface callback) {
 
         mDataChangeInterface = callback;
+    }
+
+    /**
+     * Initialize battery changes interface.
+     *
+     * @param callback The class which implemented setBatteryChangedCallback
+     */
+    public void setBatteryChangedCallback(BatteryChangedInterface callback) {
+
+        mBatteryChangeInterface = callback;
     }
 
     /**
@@ -377,13 +392,23 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
     }
 
     /**
-     * Observe this function to listen which device's connection state is updated.
+     * Observe this function to listen which device's connection state is changed.
      *
      * @return The latest updated device
      */
-    public MutableLiveData<XsensDotDevice> getConnectionUpdatedDevice() {
+    public MutableLiveData<XsensDotDevice> getConnectionChangedDevice() {
 
-        return mConnectionUpdatedSensor;
+        return mConnectionChangedSensor;
+    }
+
+    /**
+     * Observe this function to listen which device's tag name is changed.
+     *
+     * @return The latest updated device
+     */
+    public MutableLiveData<XsensDotDevice> getTagChangedDevice() {
+
+        return mTagChangedSensor;
     }
 
     /**
@@ -413,7 +438,7 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
         Log.i(TAG, "onXsensDotConnectionChanged() - address = " + address + ", state = " + state);
 
         final XsensDotDevice xsDevice = getSensor(address);
-        if (xsDevice != null) mConnectionUpdatedSensor.postValue(xsDevice);
+        if (xsDevice != null) mConnectionChangedSensor.postValue(xsDevice);
 
         switch (state) {
 
@@ -458,14 +483,29 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
 
     @Override
     public void onXsensDotTagChanged(String address, String tag) {
-
+        // This callback function will be triggered in the connection precess.
         Log.i(TAG, "onXsensDotTagChanged() - address = " + address + ", tag = " + tag);
+
+        // The default value of tag is an empty string.
+        if (!tag.equals("")) {
+
+            XsensDotDevice device = getSensor(address);
+            if (device != null) mTagChangedSensor.postValue(device);
+        }
     }
 
     @Override
     public void onXsensDotBatteryChanged(String address, int status, int percentage) {
-
+        // This callback function will be triggered in the connection precess.
         Log.i(TAG, "onXsensDotBatteryChanged() - address = " + address + ", status = " + status + ", percentage = " + percentage);
+
+        // The default value of status and percentage is -1.
+        if (status != -1 && percentage != -1) {
+            // Use callback function instead of LiveData to notify the battery information.
+            // Because when user removes the USB cable from housing, this function will be triggered 5 times.
+            // Use LiveData will lose some notification.
+            if (mBatteryChangeInterface != null) mBatteryChangeInterface.onBatteryChanged(address, status, percentage);
+        }
     }
 
     @Override
