@@ -35,20 +35,21 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.util.Log;
 
-import com.xsens.dot.android.example.interfaces.BatteryChangedInterface;
-import com.xsens.dot.android.example.interfaces.DataChangeInterface;
-import com.xsens.dot.android.sdk.events.XsensDotData;
-import com.xsens.dot.android.sdk.interfaces.XsensDotDeviceCallback;
-import com.xsens.dot.android.sdk.models.XsensDotDevice;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStoreOwner;
+
+import com.xsens.dot.android.example.interfaces.BatteryChangedInterface;
+import com.xsens.dot.android.example.interfaces.DataChangeInterface;
+import com.xsens.dot.android.sdk.events.XsensDotData;
+import com.xsens.dot.android.sdk.interfaces.XsensDotDeviceCallback;
+import com.xsens.dot.android.sdk.models.FilterProfileInfo;
+import com.xsens.dot.android.sdk.models.XsensDotDevice;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTED;
 import static com.xsens.dot.android.sdk.models.XsensDotDevice.CONN_STATE_CONNECTING;
@@ -476,12 +477,6 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
     }
 
     @Override
-    public void onXsensDotInitDone(String address) {
-
-        Log.i(TAG, "onXsensDotInitDone() - address = " + address);
-    }
-
-    @Override
     public void onXsensDotTagChanged(String address, String tag) {
         // This callback function will be triggered in the connection precess.
         Log.i(TAG, "onXsensDotTagChanged() - address = " + address + ", tag = " + tag);
@@ -519,8 +514,50 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
     }
 
     @Override
+    public void onXsensDotInitDone(String address) {
+
+        Log.i(TAG, "onXsensDotInitDone() - address = " + address);
+    }
+
+    @Override
+    public void onXsensDotButtonClicked(String address, long timestamp) {
+
+        Log.i(TAG, "onXsensDotButtonClicked() - address = " + address + ", timestamp = " + timestamp);
+    }
+
+    @Override
     public void onXsensDotPowerSavingTriggered(String address) {
 
         Log.i(TAG, "onXsensDotPowerSavingTriggered() - address = " + address);
+    }
+
+    @Override
+    public void onReadRemoteRssi(String address, int rssi) {
+
+        Log.i(TAG, "onReadRemoteRssi() - address = " + address + ", rssi = " + rssi);
+    }
+
+    @Override
+    public void onXsensDotOutputRateUpdate(String address, int outputRate) {
+
+        Log.i(TAG, "onXsensDotOutputRateUpdate() - address = " + address + ", outputRate = " + outputRate);
+    }
+
+    @Override
+    public void onXsensDotFilterProfileUpdate(String address, int filterProfileIndex) {
+
+        Log.i(TAG, "onXsensDotFilterProfileUpdate() - address = " + address + ", filterProfileIndex = " + filterProfileIndex);
+    }
+
+    @Override
+    public void onXsensDotGetFilterProfileInfo(String address, ArrayList<FilterProfileInfo> filterProfileInfoList) {
+
+        Log.i(TAG, "onXsensDotGetFilterProfileInfo() - address = " + address + ", size = " + filterProfileInfoList.size());
+    }
+
+    @Override
+    public void onSyncStatusUpdate(String address, boolean isSynced) {
+
+        Log.i(TAG, "onSyncStatusUpdate() - address = " + address + ", isSynced = " + isSynced);
     }
 }

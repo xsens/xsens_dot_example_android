@@ -42,6 +42,12 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
+
 import com.xsens.dot.android.example.BuildConfig;
 import com.xsens.dot.android.example.R;
 import com.xsens.dot.android.example.adapters.DataAdapter;
@@ -51,6 +57,7 @@ import com.xsens.dot.android.example.interfaces.StreamingClickInterface;
 import com.xsens.dot.android.example.viewmodels.SensorViewModel;
 import com.xsens.dot.android.sdk.events.XsensDotData;
 import com.xsens.dot.android.sdk.interfaces.XsensDotSyncCallback;
+import com.xsens.dot.android.sdk.models.FilterProfileInfo;
 import com.xsens.dot.android.sdk.models.XsensDotDevice;
 import com.xsens.dot.android.sdk.models.XsensDotSyncManager;
 import com.xsens.dot.android.sdk.utils.XsensDotLogger;
@@ -63,12 +70,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.DefaultItemAnimator;
-import androidx.recyclerview.widget.LinearLayoutManager;
 
 import static com.xsens.dot.android.example.adapters.DataAdapter.KEY_ADDRESS;
 import static com.xsens.dot.android.example.adapters.DataAdapter.KEY_DATA;
@@ -247,6 +248,25 @@ public class DataFragment extends Fragment implements StreamingClickInterface, D
     }
 
     /**
+     * Get the filter profile name.
+     *
+     * @param device The XsensDotDevice object
+     * @return The filter profile name, "General" by default
+     */
+    private String getFilterProfileName(XsensDotDevice device) {
+
+        int index = device.getCurrentFilterProfileIndex();
+        ArrayList<FilterProfileInfo> list = device.getFilterProfileInfoList();
+
+        for (FilterProfileInfo info : list) {
+
+            if (info.getIndex() == index) return info.getName();
+        }
+
+        return "General";
+    }
+
+    /**
      * Create data logger for each sensor.
      */
     private void createFiles() {
@@ -290,6 +310,9 @@ public class DataFragment extends Fragment implements StreamingClickInterface, D
                     filename,
                     tag,
                     fwVersion,
+                    device.isSynced(),
+                    device.getCurrentOutputRate(),
+                    getFilterProfileName(device),
                     appVersion);
 
             // Use mac address as a key to find logger object.
@@ -300,22 +323,6 @@ public class DataFragment extends Fragment implements StreamingClickInterface, D
         }
 
         mIsLogging = true;
-    }
-
-    /**
-     * Close the data output stream.
-     */
-    private void closeFiles() {
-
-        mIsLogging = false;
-
-        for (HashMap<String, Object> map : mLoggerList) {
-            // Call stop() function to flush and close the output stream.
-            // Data is kept in the stream buffer and write to file when the buffer is full.
-            // Call this function to write data to file whether the buffer is full or not.
-            XsensDotLogger logger = (XsensDotLogger) map.get(KEY_LOGGER);
-            if (logger != null) logger.stop();
-        }
     }
 
     /**
@@ -338,6 +345,28 @@ public class DataFragment extends Fragment implements StreamingClickInterface, D
                 }
             }
         }
+    }
+
+    /**
+     * Close the data output stream.
+     */
+    private void closeFiles() {
+
+        mIsLogging = false;
+
+        for (HashMap<String, Object> map : mLoggerList) {
+            // Call stop() function to flush and close the output stream.
+            // Data is kept in the stream buffer and write to file when the buffer is full.
+            // Call this function to write data to file whether the buffer is full or not.
+            XsensDotLogger logger = (XsensDotLogger) map.get(KEY_LOGGER);
+            if (logger != null) logger.stop();
+        }
+    }
+
+    @Override
+    public void onSyncingStarted(String address, boolean isSuccess, int requestCode) {
+
+        Log.i(TAG, "onSyncingStarted() - address = " + address + ", isSuccess = " + isSuccess + ", requestCode = " + requestCode);
     }
 
     @Override
@@ -423,6 +452,11 @@ public class DataFragment extends Fragment implements StreamingClickInterface, D
                 });
             }
         }
+    }
+
+    public void onSyncingStopped(String address, boolean isSuccess, int requestCode) {
+
+        Log.i(TAG, "onSyncingStopped() - address = " + address + ", isSuccess = " + isSuccess + ", requestCode = " + requestCode);
     }
 
     @Override

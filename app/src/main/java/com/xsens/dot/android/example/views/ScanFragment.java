@@ -41,6 +41,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
+
 import com.xsens.dot.android.example.R;
 import com.xsens.dot.android.example.adapters.ScanAdapter;
 import com.xsens.dot.android.example.databinding.FragmentScanBinding;
@@ -55,13 +62,6 @@ import com.xsens.dot.android.sdk.utils.XsensDotScanner;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
-import androidx.recyclerview.widget.DefaultItemAnimator;
-import androidx.recyclerview.widget.LinearLayoutManager;
 
 import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_BATTERY_PERCENTAGE;
 import static com.xsens.dot.android.example.adapters.ScanAdapter.KEY_BATTERY_STATE;
@@ -205,7 +205,7 @@ public class ScanFragment extends Fragment implements XsensDotScannerCallback, S
     }
 
     @Override
-    public void onXsensDotScanned(BluetoothDevice device) {
+    public void onXsensDotScanned(BluetoothDevice device, int rssi) {
 
         Log.i(TAG, "onXsensDotScanned() - Name: " + device.getName() + ", Address: " + device.getAddress());
 
