@@ -202,6 +202,8 @@ public class DataFragment extends Fragment implements StreamingClickInterface, D
             mSensorViewModel.setMeasurement(false);
             mSensorViewModel.updateStreamingStatus(false);
 
+            XsensDotSyncManager.getInstance(this).stopSyncing();
+
             closeFiles();
 
         } else {
