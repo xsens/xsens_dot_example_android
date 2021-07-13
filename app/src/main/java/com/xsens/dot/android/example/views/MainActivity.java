@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BLUETOOTH = 1001, REQUEST_PERMISSION_LOCATION = 1002;
 
     // The tag of fragments
-    public static final String FRAGMENT_TAG_SCAN = "scan", FRAGMENT_TAG_DATA = "data";
+    public static final String FRAGMENT_TAG_SCAN = "scan", FRAGMENT_TAG_DATA = "data", FRAGMENT_TAG_OTA = "ota";
 
     // The view binder of MainActivity
     private ActivityMainBinding mBinding;
@@ -184,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
         MenuItem scanItem = menu.findItem(R.id.action_scan);
         MenuItem streamingItem = menu.findItem(R.id.action_streaming);
         MenuItem measureItem = menu.findItem(R.id.action_measure);
+        MenuItem otaItem = menu.findItem(R.id.action_ota);
 
         if (mIsScanning) scanItem.setTitle(getString(R.string.menu_stop_scan));
         else scanItem.setTitle(getString(R.string.menu_start_scan));
@@ -192,17 +193,27 @@ public class MainActivity extends AppCompatActivity {
         if (isStreaming) streamingItem.setTitle(getString(R.string.menu_stop_streaming));
         else streamingItem.setTitle(getString(R.string.menu_start_streaming));
 
-        if (sCurrentFragment.equals(FRAGMENT_TAG_SCAN)) {
+        switch (sCurrentFragment) {
+            case FRAGMENT_TAG_SCAN:
+                scanItem.setVisible(true);
+                streamingItem.setVisible(false);
+                measureItem.setVisible(true);
+                otaItem.setVisible(true);
+                break;
 
-            scanItem.setVisible(true);
-            streamingItem.setVisible(false);
-            measureItem.setVisible(true);
+            case FRAGMENT_TAG_DATA:
+                scanItem.setVisible(false);
+                streamingItem.setVisible(true);
+                measureItem.setVisible(false);
+                otaItem.setVisible(false);
+                break;
 
-        } else if (sCurrentFragment.equals(FRAGMENT_TAG_DATA)) {
-
-            scanItem.setVisible(false);
-            streamingItem.setVisible(true);
-            measureItem.setVisible(false);
+            case FRAGMENT_TAG_OTA:
+                scanItem.setVisible(false);
+                streamingItem.setVisible(false);
+                measureItem.setVisible(false);
+                otaItem.setVisible(false);
+                break;
         }
 
         return super.onPrepareOptionsMenu(menu);
@@ -230,13 +241,36 @@ public class MainActivity extends AppCompatActivity {
                 break;
 
             case R.id.action_measure:
+                if (isNoConnectedSensor()) break;
+
                 // Change to DataFragment and put ScanFragment to the back stack.
                 Fragment dataFragment = DataFragment.newInstance();
                 addFragment(dataFragment, FRAGMENT_TAG_DATA);
                 break;
+
+            case R.id.action_ota:
+                if (isNoConnectedSensor()) break;
+
+                // Change to OtaFragment and put ScanFragment to the back stack.
+                Fragment otaFragment = OtaFragment.newInstance();
+                addFragment(otaFragment, FRAGMENT_TAG_OTA);
+                break;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Connect at least one sensor
+     */
+    private boolean isNoConnectedSensor() {
+        final int count = mSensorViewModel.getConnectedSensorCount();
+        if (count == 0) {
+            Toast.makeText(this, R.string.connection_indeed, Toast.LENGTH_LONG).show();
+            return true;
+        }
+
+        return false;
     }
 
     /**

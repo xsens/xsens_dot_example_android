@@ -4,7 +4,7 @@
 
     <string name="hint_turn_on_bluetooth">Please turn on the Bluetooth adapter.</string>
     <string name="hint_allow_location">Please allow location permission to use sensor(s).</string>
-    <string name="hint_connecting">Please wait for the connection result...</string>
+    <string name="hint_connecting">Please wait for the connection result…</string>
     <string name="hint_syncing_failed">Put sensors as close as possible and try again.</string>
     <string name="hint_check_connection">Some sensors are disconnected. Please check the connection.</string>
 
@@ -28,5 +28,25 @@
     <string name="name">Name:</string>
     <string name="orientation">Orientation (deg):</string>
     <string name="free_acc">Free Acceleration (m/s2):</string>
+    <string name="connection_indeed">Please connect to your sensor first</string>
+
+    <string name="ota">OTA</string>
+    <string name="device_name">Device Name:</string>
+    <string name="device_address">Device Address:</string>
+    <string name="firmware_version">Firmware Version:</string>
+    <string name="check_update">Check Update</string>
+    <string name="check_update_and_download">Check Update And Download</string>
+    <string name="start_ota">Start OTA</string>
+    <string name="update_state">Update Status:</string>
+    <string name="empty_value">-</string>
+    <string name="ota_progress">OTA progress</string>
+    <string name="tip_dot_uncharged">DOT is uncharged</string>
+    <string name="ota_result_success">Success</string>
+    <string name="ota_result_fail">Fail</string>
+    <string name="no_new_firmware_version">, no new firmware version.</string>
+    <string name="new_firmware_version">, new version: %s</string>
+    <string name="tip_ota_file_mismatch">File Mismatch</string>
+    <string name="error_code">, error code %d</string>
+    <string name="tip_start_ota">Please \'check update and download\' first.</string>
 
 </resources>

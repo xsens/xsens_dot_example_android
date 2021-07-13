@@ -144,6 +144,29 @@ public class SensorViewModel extends ViewModel implements XsensDotDeviceCallback
     }
 
     /**
+     * Get connected sensor count.
+     *
+     * @return The connected sensor count
+     */
+    public int getConnectedSensorCount() {
+        final ArrayList<XsensDotDevice> list = mSensorList.getValue();
+
+        if (list == null) {
+            return 0;
+        } else {
+            int count = 0;
+
+            for (XsensDotDevice device : list) {
+                if (device != null && device.getConnectionState() == CONN_STATE_CONNECTED) {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+    }
+
+    /**
      * Initialize, connect the XsensDotDevice and put it into a list.
      *
      * @param context The application context

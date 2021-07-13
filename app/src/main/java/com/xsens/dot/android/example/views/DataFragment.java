@@ -315,7 +315,8 @@ public class DataFragment extends Fragment implements StreamingClickInterface, D
                     device.isSynced(),
                     device.getCurrentOutputRate(),
                     getFilterProfileName(device),
-                    appVersion);
+                    appVersion,
+                    System.currentTimeMillis());
 
             // Use mac address as a key to find logger object.
             HashMap<String, Object> map = new HashMap<>();

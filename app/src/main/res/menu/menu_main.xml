@@ -6,8 +6,8 @@
     <item
         android:id="@+id/action_scan"
         android:orderInCategory="0"
-        app:showAsAction="ifRoom"
-        android:title="@string/menu_stop_scan"/>
+        android:title="@string/menu_stop_scan"
+        app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_streaming"
@@ -19,6 +19,12 @@
         android:id="@+id/action_measure"
         android:orderInCategory="2"
         android:title="@string/menu_measure"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_ota"
+        android:orderInCategory="3"
+        android:title="@string/ota"
         app:showAsAction="never" />
 
 </menu>
