@@ -34,6 +34,7 @@ package com.xsens.dot.android.example.apps;
 import android.app.Application;
 import android.util.Log;
 
+import com.xsens.dot.android.example.utils.XsensDotNative;
 import com.xsens.dot.android.sdk.XsensDotSdk;
 
 /**
@@ -49,6 +50,9 @@ public class XsensDotApplication extends Application {
         super.onCreate();
 
         initXsensDotSdk();
+
+        // Workaround for MFM functions
+        XsensDotNative.INSTANCE.init();
     }
 
     /**

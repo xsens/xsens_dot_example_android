@@ -2,6 +2,8 @@
 
     <string name="app_name">Xsens DOT Example</string>
 
+    <string name="tracker_name">Xsens DOT</string>
+
     <string name="hint_turn_on_bluetooth">Please turn on the Bluetooth adapter.</string>
     <string name="hint_allow_location">Please allow location permission to use sensor(s).</string>
     <string name="hint_connecting">Please wait for the connection result…</string>
@@ -48,5 +50,22 @@
     <string name="tip_ota_file_mismatch">File Mismatch</string>
     <string name="error_code">, error code %d</string>
     <string name="tip_start_ota">Please \'check update and download\' first.</string>
+
+    <string name="mfm">MFM</string>
+    <string name="mfm_tips">Rotate the sensors slowly in all directions</string>
+    <string name="start_mfm">Start MFM</string>
+    <string name="stop_mfm">Stop MFM</string>
+    <string name="restart_mfm">Restart MFM</string>
+    <string name="exit_mfm">Exit MFM</string>
+    <string name="mfm_write">Write to sensor…</string>
+    <string name="mfm_rewrite"><u>Rewrite</u></string>
+    <string name="mfm_stopped">Stopped</string>
+    <string name="mfm_processing">Processing</string>
+    <string name="mfm_processing_hint">Please wait until all processes are done</string>
+    <string name="mfm_start_fail">Start failed</string>
+    <string name="mfm_process_fail">MFM failed</string>
+    <string name="mfm_write_fail">Write failed</string>
+    <string name="mfm_process_finish">Finished</string>
+    <string name="more">More</string>
 
 </resources>

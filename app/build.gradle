@@ -1,17 +1,33 @@
 apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.2"
+    compileSdkVersion 31
+    buildToolsVersion "31.0.0"
 
     defaultConfig {
         applicationId "com.xsens.dot.android.example"
         minSdkVersion 26
-        targetSdkVersion 30
-        versionCode 2
-        versionName "1.1"
+        targetSdkVersion 31
+        versionCode 3
+        versionName "1.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags ""
+                arguments "-DANDROID_ABI=arm64-v8a", "-DANDROID_STL=c++_shared"
+            }
+        }
+
+        println("Gradle CMake Plugin:")
+        println(externalNativeBuild.cmake.cppFlags)
+        println(externalNativeBuild.cmake.arguments)
+
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
     }
 
     buildTypes {
@@ -21,19 +37,28 @@ android {
         }
     }
 
-    buildFeatures{
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.10.2"
+        }
+    }
+
+    buildFeatures {
         viewBinding = true
     }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.appcompat:appcompat:1.3.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation 'androidx.appcompat:appcompat:1.4.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
     implementation "androidx.recyclerview:recyclerview:1.2.1"
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     // Import Xsens DOT SDK
     implementation(name: 'XsensDotCore', ext: 'aar')
@@ -41,13 +66,21 @@ dependencies {
     // Import Xsens DOT OTA SDK
     implementation(name: 'XsensDotOta', ext: 'aar')
 
-    def lifecycle_version = "2.3.1"
-    def work_version = "2.5.0"
+    // Import Xsens DOT MFM SDK
+    implementation(name: 'XsensDotMfm', ext: 'aar')
+
+    def lifecycle_version = "2.4.0"
+    def work_version = "2.7.1"
 
     // LifeCycle
-    implementation "androidx.lifecycle:lifecycle-runtime:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
 
     // WorkManager
     implementation "androidx.work:work-runtime:$work_version"
+    implementation "androidx.core:core-ktx:1.7.0"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
+}
+repositories {
+    mavenCentral()
 }

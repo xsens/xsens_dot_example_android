@@ -27,4 +27,9 @@
         android:title="@string/ota"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_mfm"
+        android:orderInCategory="4"
+        android:title="@string/mfm"
+        app:showAsAction="never" />
 </menu>

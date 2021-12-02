@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BLUETOOTH = 1001, REQUEST_PERMISSION_LOCATION = 1002;
 
     // The tag of fragments
-    public static final String FRAGMENT_TAG_SCAN = "scan", FRAGMENT_TAG_DATA = "data", FRAGMENT_TAG_OTA = "ota";
+    public static final String FRAGMENT_TAG_SCAN = "scan", FRAGMENT_TAG_DATA = "data", FRAGMENT_TAG_OTA = "ota", FRAGMENT_TAG_MFM = "mfm";
 
     // The view binder of MainActivity
     private ActivityMainBinding mBinding;
@@ -93,6 +93,8 @@ public class MainActivity extends AppCompatActivity {
 
     // A variable to keep the current fragment id
     public static String sCurrentFragment = FRAGMENT_TAG_SCAN;
+
+    private EasyMfmFragment mMfmFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,7 +134,16 @@ public class MainActivity extends AppCompatActivity {
         FragmentManager manager = getSupportFragmentManager();
 
         // If the fragment count > 0 in the stack, try to resume the previous page.
-        if (manager.getBackStackEntryCount() > 0) manager.popBackStack();
+        if (manager.getBackStackEntryCount() > 0)  {
+            if (sCurrentFragment.equals(FRAGMENT_TAG_MFM)) {
+                // If MFM is cancelable
+                if (mMfmFragment == null || !mMfmFragment.isVisible() || !mMfmFragment.isCancelable(false)) {
+                    manager.popBackStack();
+                }
+            } else {
+                manager.popBackStack();
+            }
+        }
         else super.onBackPressed();
     }
 
@@ -185,6 +196,7 @@ public class MainActivity extends AppCompatActivity {
         MenuItem streamingItem = menu.findItem(R.id.action_streaming);
         MenuItem measureItem = menu.findItem(R.id.action_measure);
         MenuItem otaItem = menu.findItem(R.id.action_ota);
+        MenuItem mfmItem = menu.findItem(R.id.action_mfm);
 
         if (mIsScanning) scanItem.setTitle(getString(R.string.menu_stop_scan));
         else scanItem.setTitle(getString(R.string.menu_start_scan));
@@ -199,6 +211,7 @@ public class MainActivity extends AppCompatActivity {
                 streamingItem.setVisible(false);
                 measureItem.setVisible(true);
                 otaItem.setVisible(true);
+                mfmItem.setVisible(true);
                 break;
 
             case FRAGMENT_TAG_DATA:
@@ -206,13 +219,16 @@ public class MainActivity extends AppCompatActivity {
                 streamingItem.setVisible(true);
                 measureItem.setVisible(false);
                 otaItem.setVisible(false);
+                mfmItem.setVisible(false);
                 break;
 
             case FRAGMENT_TAG_OTA:
+            case FRAGMENT_TAG_MFM:
                 scanItem.setVisible(false);
                 streamingItem.setVisible(false);
                 measureItem.setVisible(false);
                 otaItem.setVisible(false);
+                mfmItem.setVisible(false);
                 break;
         }
 
@@ -254,6 +270,14 @@ public class MainActivity extends AppCompatActivity {
                 // Change to OtaFragment and put ScanFragment to the back stack.
                 Fragment otaFragment = OtaFragment.newInstance();
                 addFragment(otaFragment, FRAGMENT_TAG_OTA);
+                break;
+
+            case R.id.action_mfm:
+                if (isNoConnectedSensor()) break;
+
+                // Change to EasyMfmFragment and put ScanFragment to the back stack.
+                mMfmFragment = EasyMfmFragment.Companion.newInstance();
+                addFragment(mMfmFragment, FRAGMENT_TAG_MFM);
                 break;
         }
 
