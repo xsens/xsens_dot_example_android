@@ -18,4 +18,5 @@ All feedback is welcome and helps us to improve!
 
 Please report all bugs by [rasing an issue](https://github.com/xsens/xsens_dot_example_android/issues/new).
 
+
 You can also raise app development questions and feature requests of Xsens DOT in our [Community Forum](https://base.xsens.com/hc/en-us/community/topics).
