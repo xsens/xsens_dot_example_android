@@ -28,41 +28,19 @@
 //  OF ARBITRATION OF THE INTERNATIONAL CHAMBER OF COMMERCE IN THE HAGUE BY ONE OR MORE
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
+package com.xsens.dot.android.example.interfaces
 
-package com.xsens.dot.android.example.apps;
-
-import android.app.Application;
-import android.util.Log;
-
-import com.xsens.dot.android.sdk.XsensDotSdk;
+import android.view.View
 
 /**
- * A customized application class for basic initialization.
+ * This class is to react click event between fragment and adapter.
  */
-public class XsensDotApplication extends Application {
-
-    private static final String TAG = XsensDotApplication.class.getSimpleName();
-
-    @Override
-    public void onCreate() {
-
-        super.onCreate();
-
-        initXsensDotSdk();
-    }
-
+interface SensorClickInterface {
     /**
-     * Setup for Xsens DOT SDK.
+     * This function will be triggered when the item view is clicked.
+     *
+     * @param v        The item view
+     * @param position The position of item view
      */
-    private void initXsensDotSdk() {
-
-        // Get the version name of SDK.
-        String version = XsensDotSdk.getSdkVersion();
-        Log.i(TAG, "initXsensDotSdk() - version: " + version);
-
-        // Enable this feature to monitor logs from SDK.
-        XsensDotSdk.setDebugEnabled(true);
-        // Enable this feature then SDK will start reconnection when the connection is lost.
-        XsensDotSdk.setReconnectEnabled(true);
-    }
+    fun onSensorClick(v: View?, position: Int)
 }

@@ -28,16 +28,38 @@
 //  OF ARBITRATION OF THE INTERNATIONAL CHAMBER OF COMMERCE IN THE HAGUE BY ONE OR MORE
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
+package com.xsens.dot.android.example.apps
 
-package com.xsens.dot.android.example.interfaces;
+import android.app.Application
+import android.util.Log
+import com.xsens.dot.android.sdk.XsensDotSdk
+import com.xsens.dot.android.example.apps.XsensDotApplication
 
 /**
- * This class is to react click event between fragment and activity.
+ * A customized application class for basic initialization.
  */
-public interface StreamingClickInterface {
+class XsensDotApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        initXsensDotSdk()
+    }
 
     /**
-     * This function will be triggered when the start/stop measurement button is clicked.
+     * Setup for Xsens DOT SDK.
      */
-    void onStreamingTriggered();
+    private fun initXsensDotSdk() {
+
+        // Get the version name of SDK.
+        val version = XsensDotSdk.getSdkVersion()
+        Log.i(TAG, "initXsensDotSdk() - version: $version")
+
+        // Enable this feature to monitor logs from SDK.
+        XsensDotSdk.setDebugEnabled(true)
+        // Enable this feature then SDK will start reconnection when the connection is lost.
+        XsensDotSdk.setReconnectEnabled(true)
+    }
+
+    companion object {
+        private val TAG = XsensDotApplication::class.java.simpleName
+    }
 }

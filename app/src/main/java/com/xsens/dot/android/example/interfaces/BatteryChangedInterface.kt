@@ -28,21 +28,18 @@
 //  OF ARBITRATION OF THE INTERNATIONAL CHAMBER OF COMMERCE IN THE HAGUE BY ONE OR MORE
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
-
-package com.xsens.dot.android.example.interfaces;
-
-import android.view.View;
+package com.xsens.dot.android.example.interfaces
 
 /**
- * This class is to react click event between fragment and adapter.
+ * This class is to react battery changes event between fragment and view model.
  */
-public interface SensorClickInterface {
-
+interface BatteryChangedInterface {
     /**
-     * This function will be triggered when the item view is clicked.
+     * This function will be triggered when the battery information of sensor is changed.
      *
-     * @param v        The item view
-     * @param position The position of item view
+     * @param address    The mac address of device
+     * @param status     This state can be one of BATT_STATE_NOT_CHARGING or BATT_STATE_CHARGING
+     * @param percentage The range of battery level is 0 to 100
      */
-    void onSensorClick(View v, int position);
+    fun onBatteryChanged(address: String?, status: Int, percentage: Int)
 }

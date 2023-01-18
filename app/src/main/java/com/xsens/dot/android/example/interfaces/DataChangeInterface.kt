@@ -28,18 +28,19 @@
 //  OF ARBITRATION OF THE INTERNATIONAL CHAMBER OF COMMERCE IN THE HAGUE BY ONE OR MORE
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
+package com.xsens.dot.android.example.interfaces
 
-package com.xsens.dot.android.example.interfaces;
+import com.xsens.dot.android.sdk.events.XsensDotData
 
 /**
- * This class is to react click event between fragment and activity.
+ * This class is to react data changes event between fragment and view model.
  */
-public interface ScanClickInterface {
-
+interface DataChangeInterface {
     /**
-     * This function will be triggered when the start/stop scanning button is clicked.
+     * This function will be triggered when data is changed.
      *
-     * @param started The status of scanning
+     * @param address The mac address of device
+     * @param data    The XsensDotData packet
      */
-    void onScanTriggered(boolean started);
+    fun onDataChanged(address: String?, data: XsensDotData?)
 }
