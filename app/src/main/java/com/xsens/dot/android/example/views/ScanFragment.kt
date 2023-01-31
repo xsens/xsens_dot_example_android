@@ -98,7 +98,7 @@ class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, 
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        mScanAdapter = ScanAdapter(context!!, mScannedSensorList)
+        mScanAdapter = ScanAdapter(requireContext(), mScannedSensorList)
         mScanAdapter!!.setSensorClickListener(this)
         mBinding!!.sensorRecyclerView.layoutManager = LinearLayoutManager(context)
         mBinding!!.sensorRecyclerView.itemAnimator = DefaultItemAnimator()
@@ -117,7 +117,7 @@ class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, 
 
         // Notify main activity to refresh menu.
         MainActivity.sCurrentFragment = MainActivity.FRAGMENT_TAG_SCAN
-        if (activity != null) activity!!.invalidateOptionsMenu()
+        if (activity != null) requireActivity().invalidateOptionsMenu()
     }
 
     override fun onDestroy() {
@@ -147,13 +147,13 @@ class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, 
 
             //This permission is only required in Android S or higher
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
-                    activity!!,
+                    requireActivity(),
                     Manifest.permission.BLUETOOTH_SCAN
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                ActivityCompat.requestPermissions(activity!!, arrayOf(Manifest.permission.BLUETOOTH_SCAN), 1000)
+                ActivityCompat.requestPermissions(requireActivity(), arrayOf(Manifest.permission.BLUETOOTH_SCAN), 1000)
             } else {
-                mIsScanning = mXsDotScanner!!.startScan()
+                mIsScanning = if (mXsDotScanner == null) false else mXsDotScanner!!.startScan()
             }
         } else {
             // If success for stopping, it will return True from SDK. So use !(not) here.
@@ -236,8 +236,8 @@ class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, 
      */
     private fun bindViewModel() {
         if (activity != null) {
-            mBluetoothViewModel = BluetoothViewModel.getInstance(activity!!)
-            mSensorViewModel = SensorViewModel.getInstance(activity!!)
+            mBluetoothViewModel = BluetoothViewModel.getInstance(requireActivity())
+            mSensorViewModel = SensorViewModel.getInstance(requireActivity())
             mBluetoothViewModel!!.isBluetoothEnabled.observe(this) { enabled ->
                 Log.d(TAG, "isBluetoothEnabled = $enabled")
                 if (enabled) {
@@ -292,7 +292,7 @@ class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, 
         mScanAdapter!!.updateBattery(address!!, state, percentage)
         if (activity != null) {
             // This event is coming from background thread, use UI thread to update item.
-            activity!!.runOnUiThread { mScanAdapter!!.notifyDataSetChanged() }
+            requireActivity().runOnUiThread { mScanAdapter!!.notifyDataSetChanged() }
         }
     }
 

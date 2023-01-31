@@ -39,6 +39,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.ActivityCompat
 import android.content.pm.PackageManager
+import android.os.Build
 
 /**
  * This class is for some additional feature, such as: check Bluetooth adapter, check location premission...etc.
@@ -67,6 +68,8 @@ object Utils {
         }
         return false
     }
+
+
 
     /**
      * If the Bluetooth adapter is disabled, popup a system dialog for user to enable it.

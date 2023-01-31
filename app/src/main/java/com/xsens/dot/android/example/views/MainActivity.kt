@@ -37,12 +37,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.xsens.dot.android.example.R
@@ -106,6 +108,23 @@ class MainActivity : AppCompatActivity() {
         // If the fragment count > 0 in the stack, try to resume the previous page.
         if (manager.backStackEntryCount > 0) manager.popBackStack() else super.onBackPressed()
     }
+
+    // region Bluetooth permission check
+    private var requestBluetooth = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            //granted
+        } else {
+            //deny
+        }
+    }
+
+    private val requestMultiplePermissions =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            permissions.entries.forEach {
+                Log.d("test006", "${it.key} = ${it.value}")
+            }
+        }
+    //endregion
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -197,12 +216,23 @@ class MainActivity : AppCompatActivity() {
      * Check the state of Bluetooth adapter and location permission.
      */
     private fun checkBluetoothAndPermission(): Boolean {
-        val isBluetoothEnabled = isBluetoothAdapterEnabled(this)
+        val isBluetoothEnabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+        } else isBluetoothAdapterEnabled(this)
         val isPermissionGranted = isLocationPermissionGranted(this)
         if (isBluetoothEnabled) {
             if (!isPermissionGranted) requestLocationPermission(this, REQUEST_PERMISSION_LOCATION)
         } else {
-            requestEnableBluetooth(this, REQUEST_ENABLE_BLUETOOTH)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                requestMultiplePermissions.launch(
+                    arrayOf(
+                        Manifest.permission.BLUETOOTH_SCAN,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    )
+                )
+            } else {
+                requestEnableBluetooth(this, REQUEST_ENABLE_BLUETOOTH)
+            }
         }
         val status = isBluetoothEnabled && isPermissionGranted
         Log.i(TAG, "checkBluetoothAndPermission() - $status")

@@ -74,9 +74,6 @@ class ScanAdapter
         val device = mSensorList!![position][KEY_DEVICE] as BluetoothDevice?
         if (device != null) {
             val tag = mSensorList[position][KEY_TAG] as String?
-            if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                return
-            }
             if (tag != null) holder.sensorName.text = if (tag.isEmpty()) device.name else tag else holder.sensorName.text = device.name
             val batteryPercentage = mSensorList[position][KEY_BATTERY_PERCENTAGE] as Int
             val batteryState = mSensorList[position][KEY_BATTERY_STATE] as Int
