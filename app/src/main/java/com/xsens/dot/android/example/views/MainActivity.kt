@@ -49,6 +49,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.xsens.dot.android.example.R
 import com.xsens.dot.android.example.databinding.ActivityMainBinding
+import com.xsens.dot.android.example.interfaces.RecordingClickListener
 import com.xsens.dot.android.example.interfaces.ScanClickInterface
 import com.xsens.dot.android.example.interfaces.StreamingClickInterface
 import com.xsens.dot.android.example.utils.Utils.isBluetoothAdapterEnabled
@@ -57,7 +58,6 @@ import com.xsens.dot.android.example.utils.Utils.requestEnableBluetooth
 import com.xsens.dot.android.example.utils.Utils.requestLocationPermission
 import com.xsens.dot.android.example.viewmodels.BluetoothViewModel
 import com.xsens.dot.android.example.viewmodels.SensorViewModel
-import com.xsens.dot.android.example.views.MainActivity
 
 /**
  * The main activity.
@@ -80,6 +80,10 @@ class MainActivity : AppCompatActivity() {
 
     // Send the start/stop streaming click event to fragment
     private var mStreamingListener: StreamingClickInterface? = null
+
+    // Send the start/stop recording click event to fragment
+    private var mRecordingListener: RecordingClickListener? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mBinding = ActivityMainBinding.inflate(LayoutInflater.from(this))
@@ -159,17 +163,29 @@ class MainActivity : AppCompatActivity() {
         val scanItem = menu.findItem(R.id.action_scan)
         val streamingItem = menu.findItem(R.id.action_streaming)
         val measureItem = menu.findItem(R.id.action_measure)
+        val recordItem = menu.findItem(R.id.action_recording)
         if (mIsScanning) scanItem.title = getString(R.string.menu_stop_scan) else scanItem.title = getString(R.string.menu_start_scan)
         val isStreaming = mSensorViewModel!!.isStreaming.value!!
         if (isStreaming) streamingItem.title = getString(R.string.menu_stop_streaming) else streamingItem.title = getString(R.string.menu_start_streaming)
-        if (sCurrentFragment == FRAGMENT_TAG_SCAN) {
-            scanItem.isVisible = true
-            streamingItem.isVisible = false
-            measureItem.isVisible = true
-        } else if (sCurrentFragment == FRAGMENT_TAG_DATA) {
-            scanItem.isVisible = false
-            streamingItem.isVisible = true
-            measureItem.isVisible = false
+        when (sCurrentFragment) {
+            FRAGMENT_TAG_SCAN -> {
+                scanItem.isVisible = true
+                streamingItem.isVisible = false
+                measureItem.isVisible = true
+                recordItem.isVisible = true
+            }
+            FRAGMENT_TAG_DATA -> {
+                scanItem.isVisible = false
+                recordItem.isVisible = false
+                streamingItem.isVisible = true
+                measureItem.isVisible = false
+            }
+            FRAGMENT_TAG_RECORD -> {
+                scanItem.isVisible = false
+                recordItem.isVisible = false
+                streamingItem.isVisible = false
+                measureItem.isVisible = false
+            }
         }
         return super.onPrepareOptionsMenu(menu)
     }
@@ -182,11 +198,20 @@ class MainActivity : AppCompatActivity() {
                 if (mIsScanning) mScanListener!!.onScanTriggered(false) else mScanListener!!.onScanTriggered(true)
             }
             R.id.action_streaming ->                 // When the streaming button is clicked, notify to DataFragment and wait for the syncing result.
-                mStreamingListener!!.onStreamingTriggered()
+                mStreamingListener?.onStreamingTriggered()
             R.id.action_measure -> {
                 // Change to DataFragment and put ScanFragment to the back stack.
                 val dataFragment: Fragment = DataFragment.newInstance()
                 addFragment(dataFragment, FRAGMENT_TAG_DATA)
+            }
+            R.id.action_recording -> {
+                if (!mSensorViewModel!!.checkConnection()) {
+                    Toast.makeText(this, getString(R.string.hint_check_connection), Toast.LENGTH_LONG).show()
+                } else {
+                    // Change to DataFragment and put ScanFragment to the back stack.
+                    val recordingFragment: Fragment = RecordingFragment.newInstance()
+                    addFragment(recordingFragment, FRAGMENT_TAG_RECORD)
+                }
             }
         }
         return super.onOptionsItemSelected(item)
@@ -274,6 +299,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Set the trigger of recording button.
+     *
+     * @param listener The class which implemented RecordingClickListener
+     */
+    fun setRecordingTriggerListener(listener: RecordingClickListener?) {
+        mRecordingListener = listener
+    }
+
+    /**
      * A receiver for Bluetooth status.
      */
     private val mBluetoothStateReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -301,6 +335,7 @@ class MainActivity : AppCompatActivity() {
         // The tag of fragments
         const val FRAGMENT_TAG_SCAN = "scan"
         const val FRAGMENT_TAG_DATA = "data"
+        const val FRAGMENT_TAG_RECORD = "record"
 
         // A variable to keep the current fragment id
         var sCurrentFragment = FRAGMENT_TAG_SCAN

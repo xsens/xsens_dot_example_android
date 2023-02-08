@@ -38,7 +38,9 @@ import androidx.lifecycle.MutableLiveData
 import com.xsens.dot.android.sdk.models.XsensDotDevice
 import android.bluetooth.BluetoothDevice
 import android.content.Context
+import android.os.SystemClock
 import android.util.Log
+import android.widget.Toast
 import com.xsens.dot.android.example.viewmodels.SensorViewModel
 import com.xsens.dot.android.sdk.events.XsensDotData
 import com.xsens.dot.android.sdk.models.FilterProfileInfo
@@ -441,4 +443,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
         // A variable to queue multiple threads.
         private val LOCKER = Any()
     }
+
+
+
 }
