@@ -3,6 +3,7 @@ package com.xsens.dot.android.example.views
 import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -10,16 +11,19 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.xsens.dot.android.example.R
+import com.xsens.dot.android.example.adapters.RecordingAdapter
 import com.xsens.dot.android.example.databinding.FragmentRecordingBinding
 import com.xsens.dot.android.example.viewmodels.SensorViewModel
 import com.xsens.dot.android.sdk.events.XsensDotData
 import com.xsens.dot.android.sdk.interfaces.XsensDotRecordingCallback
+import com.xsens.dot.android.sdk.models.XsensDotDevice
 import com.xsens.dot.android.sdk.models.XsensDotRecordingFileInfo
 import com.xsens.dot.android.sdk.models.XsensDotRecordingState
 import com.xsens.dot.android.sdk.recording.XsensDotRecordingManager
-import java.util.ArrayList
 import java.util.HashMap
+import kotlin.collections.ArrayList
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -38,9 +42,10 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
     private var mFlashInfoCounter: Int = 0
     private var mIsRecording: Boolean = false
     private var isRecording: MutableLiveData<Boolean> = MutableLiveData(false)
+    private val mRecordingDataList: ArrayList<RecordingData> = ArrayList()
 
     //Recording Manager
-    private var mRecordingManagers: HashMap<String, RecordingData?> = HashMap()
+    private var mRecordingManagers: HashMap<String, RecordingData> = HashMap()
 
     // The devices view model instance
     private var mSensorViewModel: SensorViewModel? = null
@@ -77,6 +82,9 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
             binding.btnEnableNotification.setOnClickListener {
                 enableDataRecordingNotification()
             }
+            binding.btnEnableNotification.visibility = View.GONE
+            binding.rcvDevices.layoutManager = LinearLayoutManager(activity)
+            binding.rcvDevices.adapter = RecordingAdapter(mRecordingDataList)
             binding.btnStartStopRecording.setOnClickListener {
                 if (!mIsRecording) {
                     checkIfCanStartRecording()
@@ -149,18 +157,29 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
         } else {
             mSensorViewModel!!.allSensors?.let {
                 mFlashInfoCounter = 0
-                for ((_, manager) in mRecordingManagers) {
-                    manager?.recordingManager?.clear()
-                }
-                mRecordingManagers.clear()
+                clearRecordingManagers()
+                mRecordingDataList.clear()
                 for (device in it) {
                     val recordingManager = XsensDotRecordingManager(context!!, device, this)
-                    mRecordingManagers[device.address] = RecordingData(canRecord = false, isNotificationEnabled = false, recordingManager = recordingManager)
+                    val recordingData = RecordingData(device = device, canRecord = false, recordingManager = recordingManager, isNotificationEnabled = false, isRecording = false)
+
+                    mRecordingManagers[device.address] = recordingData
+                    mRecordingDataList.add(recordingData)
+
                     SystemClock.sleep(30)
                     recordingManager.enableDataRecordingNotification()
                 }
+
+                mRecordingBinding?.rcvDevices?.adapter?.notifyDataSetChanged()
             }
         }
+    }
+
+    private fun clearRecordingManagers() {
+        for ((_, manager) in mRecordingManagers) {
+            manager.recordingManager.clear()
+        }
+        mRecordingManagers.clear()
     }
 
     override fun onXsensDotRecordingNotification(address: String?, isEnabled: Boolean) {
@@ -183,6 +202,7 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
             mFlashInfoCounter++
 
             if (mFlashInfoCounter == mRecordingManagers.size) {
+                mFlashInfoCounter = 0
                 activity?.let { act ->
                     act.runOnUiThread {
                         mRecordingBinding?.btnStartStopRecording?.isEnabled = true
@@ -209,7 +229,12 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
     private fun startRecording() {
         for ((address, data) in mRecordingManagers) {
             data?.let {
-                data.recordingManager.startRecording()
+                SystemClock.sleep(30)
+                var success = data.recordingManager.startRecording()
+                if (!success) {
+                    SystemClock.sleep(40)
+                    data.recordingManager.startRecording()
+                }
             }
         }
         isRecording.postValue(true)
@@ -224,6 +249,35 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
         isRecording.postValue(false)
     }
 
+    private fun getRecordingDataFromList(address: String): RecordingData? {
+        if (mRecordingManagers.containsKey(address)) {
+            return mRecordingManagers[address]
+        }
+        return null
+    }
+
+    private fun getItemPositionByAddress(address: String): Int {
+        return mRecordingDataList.indexOfFirst {
+            it.device.address == address
+        }
+    }
+
+
+    private fun updateRecyclerViewItemByAddress(address: String) {
+        val index = getItemPositionByAddress(address)
+        updateRecyclerViewItem(index)
+    }
+
+    private fun updateRecyclerViewItem(index: Int) {
+        if (index != -1) {
+            activity?.let { act ->
+                act.runOnUiThread {
+                    mRecordingBinding?.rcvDevices?.adapter?.notifyItemChanged(index)
+                }
+            }
+        }
+    }
+
     override fun onXsensDotEraseDone(address: String?, isSuccess: Boolean) {
 
     }
@@ -231,8 +285,21 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
     override fun onXsensDotRecordingAck(address: String?, recordingId: Int, isSuccess: Boolean, recordingState: XsensDotRecordingState?) {
         if (recordingId == XsensDotRecordingManager.RECORDING_ID_START_RECORDING) {
             // start recording result, check recordingState, it should be success or fail.
+            address?.let {
+                getRecordingDataFromList(it)?.let { data ->
+                    data.isRecording = recordingState == XsensDotRecordingState.success
+                    updateRecyclerViewItemByAddress(address)
+                }
+            }
         } else if (recordingId == XsensDotRecordingManager.RECORDING_ID_STOP_RECORDING) {
             // stop recording result, check recordingState, it should be success or fail.
+
+            address?.let {
+                getRecordingDataFromList(it)?.let { data ->
+                    data.isRecording = !(recordingState == XsensDotRecordingState.success)
+                    updateRecyclerViewItemByAddress(address)
+                }
+            }
         } else if (recordingId == XsensDotRecordingManager.RECORDING_ID_GET_STATE) {
             //Get recording status using mRecordingManager.requestRecordingState()
             if (recordingState == XsensDotRecordingState.onErasing
@@ -247,7 +314,9 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
     }
 
     override fun onXsensDotGetRecordingTime(address: String?, startUTCSeconds: Int, totalRecordingSeconds: Int, remainingRecordingSeconds: Int) {
-//        TODO("Not yet implemented")
+        address?.let {
+            Log.d("TIME ::::: ", "$totalRecordingSeconds ___ $remainingRecordingSeconds")
+        }
     }
 
     override fun onXsensDotRequestFileInfoDone(address: String?, list: ArrayList<XsensDotRecordingFileInfo>?, isSuccess: Boolean) {
@@ -272,6 +341,13 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
     }
 
     //endregion
-
-    internal data class RecordingData(var canRecord: Boolean, var isNotificationEnabled: Boolean = false, var recordingManager: XsensDotRecordingManager)
 }
+
+
+data class RecordingData(
+    var device: XsensDotDevice,
+    var canRecord: Boolean,
+    var isNotificationEnabled: Boolean = false,
+    var recordingManager: XsensDotRecordingManager,
+    var isRecording: Boolean = false
+)
