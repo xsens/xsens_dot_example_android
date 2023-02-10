@@ -17,7 +17,8 @@
 
     <string name="start_recording">Start Recording</string>
     <string name="stop_recording">Stop Recording</string>
-    <string name="show_files">Show Files</string>
+    <string name="start_export">Start Export</string>
+    <string name="export">Export</string>
     <string name="disconnected">Disconnected</string>
     <string name="connecting">Connecting</string>
     <string name="connected">Connected</string>

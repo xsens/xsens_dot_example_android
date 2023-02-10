@@ -94,11 +94,21 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
             }
 
             binding.btnRquestFileInfo.setOnClickListener {
-                requestRecordFileInfo()
+
+                clearRecordingManagers()
+//                requestRecordFileInfo()
+                val fragmentManager = activity!!.supportFragmentManager
+                val fragmentTransaction = fragmentManager.beginTransaction()
+                fragmentTransaction.replace(R.id.container, ExportFragment(), ExportFragment.TAG)
+                fragmentTransaction.setReorderingAllowed(true)
+                fragmentTransaction.addToBackStack(null)
+                fragmentTransaction.commit()
             }
         }
         enableDataRecordingNotification()
     }
+
+
 
     private fun requestRecordFileInfo() {
         for ((address, data) in mRecordingManagers) {
@@ -110,7 +120,6 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
             }
         }
     }
-
     override fun onAttach(context: Context) {
         super.onAttach(context)
         bindViewModel()
@@ -120,11 +129,13 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
         super.onDestroy()
         isRecording.removeObserver(recordingObserver!!)
         stopRecording()
+        clearRecordingManagers()
     }
 
     override fun onResume() {
         super.onResume()
         // Notify main activity to refresh menu.
+        enableDataRecordingNotification()
         MainActivity.sCurrentFragment = MainActivity.FRAGMENT_TAG_RECORD
         if (activity != null) requireActivity().invalidateOptionsMenu()
     }
@@ -349,5 +360,6 @@ data class RecordingData(
     var canRecord: Boolean,
     var isNotificationEnabled: Boolean = false,
     var recordingManager: XsensDotRecordingManager,
+    var fileList: ArrayList<XsensDotRecordingFileInfo>? = null,
     var isRecording: Boolean = false
 )

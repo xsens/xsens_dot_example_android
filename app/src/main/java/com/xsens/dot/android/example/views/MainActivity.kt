@@ -186,6 +186,12 @@ class MainActivity : AppCompatActivity() {
                 streamingItem.isVisible = false
                 measureItem.isVisible = false
             }
+            FRAGMENT_TAG_EXPORT -> {
+                scanItem.isVisible = false
+                recordItem.isVisible = false
+                streamingItem.isVisible = false
+                measureItem.isVisible = false
+            }
         }
         return super.onPrepareOptionsMenu(menu)
     }
@@ -336,6 +342,7 @@ class MainActivity : AppCompatActivity() {
         const val FRAGMENT_TAG_SCAN = "scan"
         const val FRAGMENT_TAG_DATA = "data"
         const val FRAGMENT_TAG_RECORD = "record"
+        const val FRAGMENT_TAG_EXPORT = "export"
 
         // A variable to keep the current fragment id
         var sCurrentFragment = FRAGMENT_TAG_SCAN
