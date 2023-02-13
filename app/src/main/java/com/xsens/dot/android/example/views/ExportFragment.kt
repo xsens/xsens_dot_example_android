@@ -20,6 +20,7 @@ import com.xsens.dot.android.example.R
 import com.xsens.dot.android.example.adapters.ExportAdapter
 import com.xsens.dot.android.example.databinding.FragmentExportBinding
 import com.xsens.dot.android.example.interfaces.FileSelectionCallback
+import com.xsens.dot.android.example.utils.ProgressDialog
 import com.xsens.dot.android.example.viewmodels.SensorViewModel
 import com.xsens.dot.android.sdk.events.XsensDotData
 import com.xsens.dot.android.sdk.interfaces.XsensDotRecordingCallback
@@ -46,6 +47,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
     private var mCurrentExportingDir: String = ""
     private var mSelectExportedDataIds: ByteArray? = null
     private val mExportingDeviceList: ArrayList<XsensDotDevice> = ArrayList()
+    private val mExportingCompletedDeviceList: ArrayList<String> = ArrayList()
     private val mExportingInProgressDeviceList: ArrayList<String> = ArrayList()
     private val mExportingFailedDeviceList: ArrayList<String> = ArrayList()
     private lateinit var mExportBinding: FragmentExportBinding
@@ -53,13 +55,15 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
     private val mRecordingDataList: ArrayList<RecordingData> = ArrayList()
     private val mCheckedFileInfoMap = HashMap<String, ArrayList<XsRecordingFileInfo>>()
 
+    private var mProgressDialog: ProgressDialog? = null
+
     //Recording Manager
     private var mRecordingManagers: HashMap<String, RecordingData> = HashMap()
 
     // The devices view model instance
     private var mSensorViewModel: SensorViewModel? = null
 
-    val startForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+    private val startForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
             val data = result.data!!
             val address = data.getStringExtra(KEY_ADDRESS)
@@ -137,6 +141,23 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
             arguments = Bundle().apply {}
         }
     }
+
+    //region Progress Dialog
+    private fun showProgressDialog() {
+        mProgressDialog = ProgressDialog(activity!!).apply {
+            createDialog()
+            setStopButtonListener {
+                stopExporting()
+            }
+        }
+
+        mProgressDialog?.show()
+    }
+
+    private fun dismissProgressDialog() {
+        mProgressDialog?.dismiss()
+    }
+    //endregion
 
     //region Override methods
     override fun onAttach(context: Context) {
@@ -292,6 +313,8 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
                     mCurrentExportingDir = makeExportDir()
 
                     if (mCurrentExportingDir.isEmpty()) return
+
+                    showProgressDialog()
 
                     // Start exporting
                     for ((address, recordingData) in mRecordingManagers.entries) {
@@ -464,23 +487,30 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
 
     override fun onXsensDotDataExported(address: String?, fileInfo: XsensDotRecordingFileInfo?, p2: XsensDotData?) {
         address?.let {
-            fileInfo?.let { }
+            fileInfo?.let {
+
+            }
         }
     }
 
     override fun onXsensDotDataExported(address: String?, fileInfo: XsensDotRecordingFileInfo?) {
         address?.let {
-            fileInfo?.let { }
+            fileInfo?.let { info ->
+                Log.d(TAG, "EXPORTED FILE : ${info.fileName}")
+            }
         }
     }
 
     override fun onXsensDotAllDataExported(address: String?) {
         address?.let {
+            dismissProgressDialog()
         }
     }
 
     override fun onXsensDotStopExportingData(address: String?) {
-        address?.let { }
+        address?.let {
+            dismissProgressDialog()
+        }
     }
     //endregion
 }
