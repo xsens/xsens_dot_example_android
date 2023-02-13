@@ -2,7 +2,9 @@ package com.xsens.dot.android.example.views
 
 import XsRecordingFileInfo
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -74,7 +76,9 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
             }
             address?.let {
                 mCheckedFileInfoMap[it] = selectList ?: ArrayList()
+                updateRecyclerViewItemByAddress(it)
             }
+
         }
     }
 
@@ -142,23 +146,6 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
         }
     }
 
-    //region Progress Dialog
-    private fun showProgressDialog() {
-        mProgressDialog = ProgressDialog(activity!!).apply {
-            createDialog()
-            setStopButtonListener {
-                stopExporting()
-            }
-        }
-
-        mProgressDialog?.show()
-    }
-
-    private fun dismissProgressDialog() {
-        mProgressDialog?.dismiss()
-    }
-    //endregion
-
     //region Override methods
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -178,42 +165,31 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
     }
     //endregion
 
-    //region List methods
-
-    private fun getXsensDotDeviceByAddress(address: String): XsensDotDevice? {
-        getRecordingDataFromList(address)?.let { data ->
-            return data.device
-        }
-        return null
-    }
-
-    private fun getRecordingDataFromList(address: String): RecordingData? {
-        if (mRecordingManagers.containsKey(address)) {
-            return mRecordingManagers[address]
-        }
-        return null
-    }
-
-    private fun getItemPositionByAddress(address: String): Int {
-        return mRecordingDataList.indexOfFirst {
-            it.device.address == address
-        }
-    }
-
-
-    private fun updateRecyclerViewItemByAddress(address: String) {
-        val index = getItemPositionByAddress(address)
-        updateRecyclerViewItem(index)
-    }
-
-    private fun updateRecyclerViewItem(index: Int) {
-        if (index != -1) {
-            activity?.let { act ->
-                act.runOnUiThread {
-                    mExportBinding.rcvDevices.adapter?.notifyItemChanged(index)
-                }
+    //region Alert Dialogs
+    private fun showProgressDialog() {
+        mProgressDialog = ProgressDialog(activity!!).apply {
+            createDialog()
+            setStopButtonListener {
+                stopExporting()
             }
         }
+
+        mProgressDialog?.show()
+    }
+
+    private fun dismissProgressDialog() {
+        mProgressDialog?.dismiss()
+    }
+
+    private fun showExportedDirDialog() {
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle("Export Completed")
+        builder.setMessage("The files are exported to\n$mCurrentExportingDir")
+        builder.setPositiveButton("Ok", DialogInterface.OnClickListener { dialogInterface, i ->
+            dialogInterface.dismiss()
+        })
+        val dialog = builder.create()
+        dialog.show()
     }
     //endregion
 
@@ -266,6 +242,45 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
         }
     }
 
+    //endregion
+
+    //region List methods
+
+    private fun getXsensDotDeviceByAddress(address: String): XsensDotDevice? {
+        getRecordingDataFromList(address)?.let { data ->
+            return data.device
+        }
+        return null
+    }
+
+    private fun getRecordingDataFromList(address: String): RecordingData? {
+        if (mRecordingManagers.containsKey(address)) {
+            return mRecordingManagers[address]
+        }
+        return null
+    }
+
+    private fun getItemPositionByAddress(address: String): Int {
+        return mRecordingDataList.indexOfFirst {
+            it.device.address == address
+        }
+    }
+
+
+    private fun updateRecyclerViewItemByAddress(address: String) {
+        val index = getItemPositionByAddress(address)
+        updateRecyclerViewItem(index)
+    }
+
+    private fun updateRecyclerViewItem(index: Int) {
+        if (index != -1) {
+            activity?.let { act ->
+                act.runOnUiThread {
+                    mExportBinding.rcvDevices.adapter?.notifyItemChanged(index)
+                }
+            }
+        }
+    }
     //endregion
 
     //region Exporting
@@ -367,9 +382,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
             }
 
             if (!isSuccess) {
-//                mBinding.listViewExportingDevice.adapter?.let {
-//                    (it as DataExportingDevicesAdapter).updateStopExportingFailed(address)
-//                }
+                //FAILED
             }
         }
     }
@@ -503,7 +516,12 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
 
     override fun onXsensDotAllDataExported(address: String?) {
         address?.let {
-            dismissProgressDialog()
+            activity?.let {
+                it.runOnUiThread {
+                    dismissProgressDialog()
+                    showExportedDirDialog()
+                }
+            }
         }
     }
 
