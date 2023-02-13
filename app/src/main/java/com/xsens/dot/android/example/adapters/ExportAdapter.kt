@@ -1,5 +1,6 @@
 package com.xsens.dot.android.example.adapters
 
+import XsRecordingFileInfo
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,8 +11,13 @@ import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.xsens.dot.android.example.R
 import com.xsens.dot.android.example.interfaces.FileSelectionCallback
 import com.xsens.dot.android.example.views.RecordingData
+import java.util.HashMap
 
-class ExportAdapter(private var mDataList: ArrayList<RecordingData>, private var fileSelectionCallback: FileSelectionCallback) :
+class ExportAdapter(
+    private var mDataList: ArrayList<RecordingData>,
+    private val mCheckedFileInfoMap: HashMap<String, ArrayList<XsRecordingFileInfo>>,
+    private var fileSelectionCallback: FileSelectionCallback
+) :
     RecyclerView.Adapter<ExportAdapter.ExportViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ExportViewHolder {
         val itemView = LayoutInflater.from(parent.context).inflate(R.layout.item_export, parent, false)
@@ -29,7 +35,10 @@ class ExportAdapter(private var mDataList: ArrayList<RecordingData>, private var
         }
         holder.txtDeviceName.text = data.device.name
         holder.txtDeviceAddress.text = data.device.address
-        holder.txtFileCount.text = if (data.recordingFileInfoList.isEmpty()) "0 Files" else "${data.recordingFileInfoList.size} Files"
+        val selectedFileCount = mCheckedFileInfoMap[data.device.address]?.size ?: 0
+        val totalFiles = data.recordingFileInfoList.size
+        holder.txtFileCount.text =
+            "$selectedFileCount/${totalFiles}\nFiles Selected" //if (data.recordingFileInfoList.isEmpty()) "0 Files" else "${mCheckedFileInfoMap[data.device.address].size} Files"
     }
 
     class ExportViewHolder(rootView: View) : ViewHolder(rootView) {

@@ -4,8 +4,10 @@ import XsRecordingFileInfo
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -21,11 +23,14 @@ import com.xsens.dot.android.example.interfaces.FileSelectionCallback
 import com.xsens.dot.android.example.viewmodels.SensorViewModel
 import com.xsens.dot.android.sdk.events.XsensDotData
 import com.xsens.dot.android.sdk.interfaces.XsensDotRecordingCallback
+import com.xsens.dot.android.sdk.models.XsensDotDevice
 import com.xsens.dot.android.sdk.models.XsensDotRecordingFileInfo
 import com.xsens.dot.android.sdk.models.XsensDotRecordingState
 import com.xsens.dot.android.sdk.recording.XsensDotRecordingManager
-import java.util.ArrayList
-import java.util.HashMap
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * A simple [Fragment] subclass.
@@ -35,9 +40,18 @@ import java.util.HashMap
 class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallback {
 
 
+    private var isExporting: Boolean = false
+    private var mSensorsInProgressCount: Int = 0
+    private var mSensorsTotalExportingCount: Int = 0
+    private var mCurrentExportingDir: String = ""
+    private var mSelectExportedDataIds: ByteArray? = null
+    private val mExportingDeviceList: ArrayList<XsensDotDevice> = ArrayList()
+    private val mExportingInProgressDeviceList: ArrayList<String> = ArrayList()
+    private val mExportingFailedDeviceList: ArrayList<String> = ArrayList()
     private lateinit var mExportBinding: FragmentExportBinding
     private var mFlashInfoCounter: Int = 0
     private val mRecordingDataList: ArrayList<RecordingData> = ArrayList()
+    private val mCheckedFileInfoMap = HashMap<String, ArrayList<XsRecordingFileInfo>>()
 
     //Recording Manager
     private var mRecordingManagers: HashMap<String, RecordingData> = HashMap()
@@ -46,10 +60,17 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
     private var mSensorViewModel: SensorViewModel? = null
 
     val startForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val intent = result.data
-            // Handle the Intent
-            //do stuff here
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val data = result.data!!
+            val address = data.getStringExtra(KEY_ADDRESS)
+            val selectList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                data.getParcelableArrayListExtra(KEY_SELECT_FILE_LIST_RESULT, XsRecordingFileInfo::class.java)
+            } else {
+                data.getParcelableArrayListExtra<XsRecordingFileInfo>(KEY_SELECT_FILE_LIST_RESULT)
+            }
+            address?.let {
+                mCheckedFileInfoMap[it] = selectList ?: ArrayList()
+            }
         }
     }
 
@@ -71,19 +92,22 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
     private fun initView() {
         mExportBinding?.let { binding ->
             binding.rcvDevices.layoutManager = LinearLayoutManager(context)
-            binding.rcvDevices.adapter = ExportAdapter(mRecordingDataList, this)
-            binding.btnRquestFileInfo.setOnClickListener {
-                requestRecordFileInfo()
+            binding.rcvDevices.adapter = ExportAdapter(mRecordingDataList, mCheckedFileInfoMap, this)
+            binding.btnStartStopExport.setOnClickListener {
+                if (!isExporting) {
+                    startExporting()
+                } else {
+                    stopExporting()
+                }
             }
         }
-
         enableDataRecordingNotification()
     }
 
     override fun onFileSelectionClick(address: String) {
         getRecordingDataFromList(address)?.let {
             if (it.recordingFileInfoList.isNotEmpty()) {
-                val checkedList: ArrayList<XsRecordingFileInfo> = ArrayList()
+                val checkedList: ArrayList<XsRecordingFileInfo> = mCheckedFileInfoMap[address] ?: ArrayList()
                 val intent = Intent(context, RecordingFileSelectionActivity::class.java)
                 intent.putExtra(KEY_TITLE, tag)
                 intent.putExtra(KEY_ADDRESS, address)
@@ -134,6 +158,14 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
     //endregion
 
     //region List methods
+
+    private fun getXsensDotDeviceByAddress(address: String): XsensDotDevice? {
+        getRecordingDataFromList(address)?.let { data ->
+            return data.device
+        }
+        return null
+    }
+
     private fun getRecordingDataFromList(address: String): RecordingData? {
         if (mRecordingManagers.containsKey(address)) {
             return mRecordingManagers[address]
@@ -190,7 +222,6 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
                 for (device in it) {
                     val recordingManager = XsensDotRecordingManager(context!!, device, this)
                     val recordingData = RecordingData(device = device, canRecord = false, recordingManager = recordingManager, isNotificationEnabled = false, isRecording = false)
-//                    recordingManager.clear()
                     mRecordingManagers[device.address] = recordingData
                     mRecordingDataList.add(recordingData)
 
@@ -215,6 +246,160 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
     }
 
     //endregion
+
+    //region Exporting
+    private fun startExporting() {
+        context?.let {
+            mExportingDeviceList.clear()
+
+
+            if (mSelectExportedDataIds == null) {
+                mSelectExportedDataIds = byteArrayOf(
+                    XsensDotRecordingManager.RECORDING_DATA_ID_TIMESTAMP,
+                    XsensDotRecordingManager.RECORDING_DATA_ID_EULER_ANGLES,
+                    XsensDotRecordingManager.RECORDING_DATA_ID_CALIBRATED_ACC,
+                    XsensDotRecordingManager.RECORDING_DATA_ID_CALIBRATED_GYR
+                )
+            }
+
+            mSelectExportedDataIds?.let { ids ->
+                val isSuccess = selectExportedData(ids)
+
+                if (isSuccess) {
+                    val map = HashMap<String, ArrayList<XsensDotRecordingFileInfo>>()
+
+                    for ((key, value) in mCheckedFileInfoMap.entries) {
+                        val infoList = ArrayList<XsensDotRecordingFileInfo>()
+                        for (info in value) {
+                            val newInfo = XsensDotRecordingFileInfo(info.id, info.fileName, info.size)
+                            newInfo.startRecordingTimestamp = info.startRecordingTimestamp
+                            infoList.add(newInfo)
+                        }
+
+                        map[key] = infoList
+
+                        // Find device if it selected files to export
+                        if (infoList.size > 0) {
+                            val device = getXsensDotDeviceByAddress(key)
+                            device?.let { xsDevice ->
+                                mExportingDeviceList.add(xsDevice)
+                            }
+                        }
+                    }
+
+                    if (mExportingDeviceList.size == 0) return
+
+                    mCurrentExportingDir = makeExportDir()
+
+                    if (mCurrentExportingDir.isEmpty()) return
+
+                    // Start exporting
+                    for ((address, recordingData) in mRecordingManagers.entries) {
+                        val manager = recordingData.recordingManager
+                        map[address]?.let { fileList ->
+                            if (fileList.size > 0) {
+                                mSensorsTotalExportingCount++
+
+                                var isStartSuccess = manager.startExporting(fileList)
+
+                                Log.d(TAG, "startExporting $address, success $isSuccess")
+
+                                if (!isStartSuccess) {
+                                    SystemClock.sleep(30)
+                                    isStartSuccess = manager.startExporting(fileList)
+
+                                    Log.d(TAG, "startExporting retry $address, success $isSuccess")
+                                }
+
+                                if (isStartSuccess) {
+                                    mSensorsInProgressCount++
+                                    mExportingInProgressDeviceList.add(address)
+                                } else {
+                                    mExportingFailedDeviceList.add(address)
+                                }
+                            }
+                        }
+                    }
+
+                } else {
+//                    mExportingState = EXPORTING_STATE_IDLE
+//                    updateUI()
+                }
+            }
+        }
+    }
+
+    private fun stopExporting() {
+        for ((address, data) in mRecordingManagers.entries) {
+            val manager = data.recordingManager
+            var isSuccess = manager.stopExporting()
+
+            Log.d(TAG, "stopExporting $address, success $isSuccess")
+
+            if (!isSuccess) {
+                SystemClock.sleep(30)
+                isSuccess = manager.stopExporting()
+
+                Log.d(TAG, "stopExporting retry $address, success $isSuccess")
+            }
+
+            if (!isSuccess) {
+//                mBinding.listViewExportingDevice.adapter?.let {
+//                    (it as DataExportingDevicesAdapter).updateStopExportingFailed(address)
+//                }
+            }
+        }
+    }
+
+    private fun makeExportDir(): String {
+        context?.let { ctx ->
+            val root = ctx.applicationContext.getExternalFilesDir(null)
+
+            if (root != null) {
+                val dir = File(
+                    root.toString() + File.separator + "recordings"
+                            + File.separator + SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.getDefault()).format(Date())
+                )
+
+                if (mkdirs(dir.toString())) {
+                    return dir.toString()
+                }
+            }
+        }
+
+        return ""
+    }
+
+    private fun mkdirs(path: String): Boolean {
+        val file = File(path)
+        return if (!file.exists()) file.mkdirs() else true
+    }
+
+    private fun selectExportedData(ids: ByteArray): Boolean {
+        var hasSuccess = false
+
+        for ((address, recordingData) in mRecordingManagers.entries) {
+            val manager = recordingData.recordingManager
+            var isSuccess = manager.selectExportedData(ids)
+
+            Log.d(TAG, "selectExportedData $address, success $isSuccess")
+
+            if (!isSuccess) {
+                SystemClock.sleep(30)
+                isSuccess = manager.selectExportedData(ids)
+
+                Log.d(TAG, "selectExportedData retry $address, success $isSuccess")
+            }
+
+            if (isSuccess) {
+                hasSuccess = isSuccess
+            }
+        }
+
+        return hasSuccess
+    }
+    //endregion
+
 
     //region Callback Methods
 
@@ -277,18 +462,25 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
         }
     }
 
-    override fun onXsensDotDataExported(p0: String?, p1: XsensDotRecordingFileInfo?, p2: XsensDotData?) {
+    override fun onXsensDotDataExported(address: String?, fileInfo: XsensDotRecordingFileInfo?, p2: XsensDotData?) {
+        address?.let {
+            fileInfo?.let { }
+        }
     }
 
-    override fun onXsensDotDataExported(p0: String?, p1: XsensDotRecordingFileInfo?) {
+    override fun onXsensDotDataExported(address: String?, fileInfo: XsensDotRecordingFileInfo?) {
+        address?.let {
+            fileInfo?.let { }
+        }
     }
 
-    override fun onXsensDotAllDataExported(p0: String?) {
+    override fun onXsensDotAllDataExported(address: String?) {
+        address?.let {
+        }
     }
 
-    override fun onXsensDotStopExportingData(p0: String?) {
+    override fun onXsensDotStopExportingData(address: String?) {
+        address?.let { }
     }
-
-
     //endregion
 }

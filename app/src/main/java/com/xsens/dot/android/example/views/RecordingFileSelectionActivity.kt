@@ -38,16 +38,8 @@ class RecordingFileSelectionActivity : AppCompatActivity(), View.OnClickListener
         initView()
     }
 
-//    override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
-//        super.onCreate(savedInstanceState, persistentState)
-//        supportRequestWindowFeature(Window.FEATURE_NO_TITLE)
-//        mBinding = ActivityRecordingFileSelectionBinding.inflate(LayoutInflater.from(this))
-//        setContentView(mBinding!!.root)
-//        initView()
-//    }
-
     private fun initView() {
-        mBinding.title.text = intent.getStringExtra(KEY_TITLE)
+        mBinding.title.text = "Export"
 
         val list = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableArrayListExtra(KEY_FILE_INFO_LIST, XsRecordingFileInfo::class.java)
