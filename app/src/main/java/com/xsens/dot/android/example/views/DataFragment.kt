@@ -236,7 +236,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
                 device.isSynced,
                 device.currentOutputRate,
                 getFilterProfileName(device),
-                appVersion
+                appVersion, 0
             )
 
             // Use mac address as a key to find logger object.

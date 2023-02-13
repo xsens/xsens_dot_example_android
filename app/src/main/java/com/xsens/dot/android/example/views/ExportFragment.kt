@@ -1,6 +1,9 @@
 package com.xsens.dot.android.example.views
 
+import XsRecordingFileInfo
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
 import androidx.fragment.app.Fragment
@@ -8,10 +11,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.xsens.dot.android.example.R
 import com.xsens.dot.android.example.adapters.ExportAdapter
 import com.xsens.dot.android.example.databinding.FragmentExportBinding
+import com.xsens.dot.android.example.interfaces.FileSelectionCallback
 import com.xsens.dot.android.example.viewmodels.SensorViewModel
 import com.xsens.dot.android.sdk.events.XsensDotData
 import com.xsens.dot.android.sdk.interfaces.XsensDotRecordingCallback
@@ -21,13 +27,12 @@ import com.xsens.dot.android.sdk.recording.XsensDotRecordingManager
 import java.util.ArrayList
 import java.util.HashMap
 
-
 /**
  * A simple [Fragment] subclass.
  * Use the [ExportFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class ExportFragment : Fragment(), XsensDotRecordingCallback {
+class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallback {
 
 
     private lateinit var mExportBinding: FragmentExportBinding
@@ -39,6 +44,14 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback {
 
     // The devices view model instance
     private var mSensorViewModel: SensorViewModel? = null
+
+    val startForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val intent = result.data
+            // Handle the Intent
+            //do stuff here
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,7 +71,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback {
     private fun initView() {
         mExportBinding?.let { binding ->
             binding.rcvDevices.layoutManager = LinearLayoutManager(context)
-            binding.rcvDevices.adapter = ExportAdapter(mRecordingDataList)
+            binding.rcvDevices.adapter = ExportAdapter(mRecordingDataList, this)
             binding.btnRquestFileInfo.setOnClickListener {
                 requestRecordFileInfo()
             }
@@ -67,8 +80,27 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback {
         enableDataRecordingNotification()
     }
 
+    override fun onFileSelectionClick(address: String) {
+        getRecordingDataFromList(address)?.let {
+            if (it.recordingFileInfoList.isNotEmpty()) {
+                val checkedList: ArrayList<XsRecordingFileInfo> = ArrayList()
+                val intent = Intent(context, RecordingFileSelectionActivity::class.java)
+                intent.putExtra(KEY_TITLE, tag)
+                intent.putExtra(KEY_ADDRESS, address)
+                intent.putExtra(KEY_FILE_INFO_LIST, it.recordingFileInfoList)
+                intent.putExtra(KEY_CHECKED_FILE_INFO_LIST, checkedList)
+                startForResult.launch(intent)
+            }
+        }
+    }
+
     companion object {
         val TAG: String = "EXPORT_FRAGMENT"
+        const val KEY_SELECT_FILE_LIST_RESULT = "select_file_list"
+        const val KEY_TITLE = "key_title"
+        const val KEY_ADDRESS = "key_address"
+        const val KEY_FILE_INFO_LIST = "file_info_list"
+        const val KEY_CHECKED_FILE_INFO_LIST = "checked_file_info_list"
 
         /**
          * Use this factory method to create a new instance of
@@ -232,7 +264,14 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback {
     override fun onXsensDotRequestFileInfoDone(address: String?, fileList: ArrayList<XsensDotRecordingFileInfo>?, isSuccess: Boolean) {
         address?.let {
             getRecordingDataFromList(it)?.let { recordingData ->
-                recordingData.fileList = fileList
+                val recordingFileInfoList: ArrayList<XsRecordingFileInfo> = ArrayList()
+                fileList?.let { list ->
+                    for (i in (list.size - 1) downTo 0) {
+                        val element = list[i]
+                        recordingFileInfoList.add(XsRecordingFileInfo(address, element.fileId, element.fileName, element.dataSize, element.startRecordingTimestamp))
+                    }
+                }
+                recordingData.recordingFileInfoList = recordingFileInfoList
             }
             updateRecyclerViewItemByAddress(it)
         }
@@ -249,5 +288,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback {
 
     override fun onXsensDotStopExportingData(p0: String?) {
     }
+
+
     //endregion
 }

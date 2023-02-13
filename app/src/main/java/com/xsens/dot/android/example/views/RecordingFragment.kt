@@ -1,5 +1,6 @@
 package com.xsens.dot.android.example.views
 
+import XsRecordingFileInfo
 import android.content.Context
 import android.os.Bundle
 import android.os.SystemClock
@@ -109,7 +110,6 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
     }
 
 
-
     private fun requestRecordFileInfo() {
         for ((address, data) in mRecordingManagers) {
             data?.let {
@@ -120,6 +120,7 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
             }
         }
     }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         bindViewModel()
@@ -360,6 +361,7 @@ data class RecordingData(
     var canRecord: Boolean,
     var isNotificationEnabled: Boolean = false,
     var recordingManager: XsensDotRecordingManager,
-    var fileList: ArrayList<XsensDotRecordingFileInfo>? = null,
     var isRecording: Boolean = false
-)
+) {
+    var recordingFileInfoList: ArrayList<XsRecordingFileInfo> = ArrayList()
+}

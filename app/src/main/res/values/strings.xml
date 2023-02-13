@@ -36,4 +36,9 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
+    <string name="n_file_selected">%d file selected</string>
+    <string name="n_files_selected">%d files selected</string>
+    <string name="cancel_capital">CANCEL</string>
+    <string name="confirm_capital">CONFIRM</string>
+
 </resources>
