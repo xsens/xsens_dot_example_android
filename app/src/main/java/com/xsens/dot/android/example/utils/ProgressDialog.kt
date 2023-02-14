@@ -48,6 +48,9 @@ class ProgressDialog(private val activity: Activity) {
     private lateinit var txtProgress: TextView
     private lateinit var btnStop: Button
 
+    /**
+     * Create a new Progress dialog
+     * */
     fun createDialog() {
         val inflater: LayoutInflater = activity.layoutInflater
         val dialogView: View = inflater.inflate(R.layout.dialog_export_progress, null)
@@ -66,10 +69,16 @@ class ProgressDialog(private val activity: Activity) {
         mAlertDialog = mAlertDialogBuilder.create()
     }
 
+    /**
+     * Display the progress dialog
+     * */
     fun show() {
         mAlertDialog.show()
     }
 
+    /**
+     * Assign listener for button click
+     * */
     fun setStopButtonListener(listener: () -> Unit) {
         btnStop.setOnClickListener {
             listener()
@@ -77,10 +86,16 @@ class ProgressDialog(private val activity: Activity) {
         }
     }
 
+    /**
+     * Update the progress text
+     * */
     fun updateProgress(progress: Int, total: Int) {
         txtProgress.text = "$progress/$total"
     }
 
+    /**
+     * Dismiss the progress dialog
+     * */
     fun dismiss() {
         if (mAlertDialog.isShowing) {
             mAlertDialog.dismiss()
