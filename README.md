@@ -12,6 +12,8 @@ Refer to Android programming guide for more explanations of following functions.
 - Connect - Chapter 3.4
 - Synchronization - Chapter 3.7
 - Start measurement - Chapter 3.8
+- Streaming - Chapter 4.10
+- Data Logging - Chapter 4.10.4
 - Recording - Chapter 4.12
 - Data Exporting - Chapter 4.13
 
