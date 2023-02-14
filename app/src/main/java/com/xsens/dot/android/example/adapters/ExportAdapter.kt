@@ -37,8 +37,11 @@ class ExportAdapter(
         holder.txtDeviceAddress.text = data.device.address
         val selectedFileCount = mCheckedFileInfoMap[data.device.address]?.size ?: 0
         val totalFiles = data.recordingFileInfoList.size
-        holder.txtFileCount.text =
-            "$selectedFileCount/${totalFiles}\nFiles Selected" //if (data.recordingFileInfoList.isEmpty()) "0 Files" else "${mCheckedFileInfoMap[data.device.address].size} Files"
+        holder.txtFileCount.text = if (totalFiles == 0) {
+            "Please Wait"
+        } else {
+            "$selectedFileCount/${totalFiles}\nFiles Selected"
+        }
     }
 
     class ExportViewHolder(rootView: View) : ViewHolder(rootView) {

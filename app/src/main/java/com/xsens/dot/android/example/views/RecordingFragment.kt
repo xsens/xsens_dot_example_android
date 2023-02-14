@@ -26,16 +26,6 @@ import com.xsens.dot.android.sdk.recording.XsensDotRecordingManager
 import java.util.HashMap
 import kotlin.collections.ArrayList
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [RecordingFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class RecordingFragment : Fragment(), XsensDotRecordingCallback {
 
     private var recordingObserver: Observer<Boolean>? = null
@@ -44,13 +34,13 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
     private var mIsRecording: Boolean = false
     private var isRecording: MutableLiveData<Boolean> = MutableLiveData(false)
     private val mRecordingDataList: ArrayList<RecordingData> = ArrayList()
-
-    //Recording Manager
     private var mRecordingManagers: HashMap<String, RecordingData> = HashMap()
 
     // The devices view model instance
     private var mSensorViewModel: SensorViewModel? = null
 
+
+    //region Fragment method
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {}
@@ -80,10 +70,6 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
         mRecordingBinding?.let { binding ->
             isRecording.observeForever(recordingObserver!!)
             binding.btnStartStopRecording.isEnabled = false
-            binding.btnEnableNotification.setOnClickListener {
-                enableDataRecordingNotification()
-            }
-            binding.btnEnableNotification.visibility = View.GONE
             binding.rcvDevices.layoutManager = LinearLayoutManager(activity)
             binding.rcvDevices.adapter = RecordingAdapter(mRecordingDataList)
             binding.btnStartStopRecording.setOnClickListener {
@@ -94,10 +80,9 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
                 }
             }
 
-            binding.btnRquestFileInfo.setOnClickListener {
+            binding.btnRequestFileInfo.setOnClickListener {
 
                 clearRecordingManagers()
-//                requestRecordFileInfo()
                 val fragmentManager = activity!!.supportFragmentManager
                 val fragmentTransaction = fragmentManager.beginTransaction()
                 fragmentTransaction.replace(R.id.container, ExportFragment(), ExportFragment.TAG)
@@ -107,18 +92,6 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
             }
         }
         enableDataRecordingNotification()
-    }
-
-
-    private fun requestRecordFileInfo() {
-        for ((address, data) in mRecordingManagers) {
-            data?.let {
-                if (it.isNotificationEnabled) {
-                    SystemClock.sleep(30)
-                    it.recordingManager.requestFileInfo()
-                }
-            }
-        }
     }
 
     override fun onAttach(context: Context) {
@@ -142,12 +115,6 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
     }
 
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @return A new instance of fragment RecordingFragment.
-         */
         @JvmStatic
         fun newInstance() =
             RecordingFragment()
@@ -158,8 +125,9 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
             mSensorViewModel = SensorViewModel.getInstance(activity!!)
         }
     }
+    //endregion
 
-    //region Recording Callbacks
+    //region Recording
 
     private fun enableDataRecordingNotification() {
 
@@ -187,57 +155,6 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
         }
     }
 
-    private fun clearRecordingManagers() {
-        for ((_, manager) in mRecordingManagers) {
-            manager.recordingManager.clear()
-        }
-        mRecordingManagers.clear()
-    }
-
-    override fun onXsensDotRecordingNotification(address: String?, isEnabled: Boolean) {
-        address?.let {
-            mRecordingManagers[it]?.isNotificationEnabled = isEnabled
-            if (isEnabled) {
-                SystemClock.sleep(30)
-                mRecordingManagers[it]?.recordingManager?.requestFlashInfo()
-            }
-        }
-    }
-
-    override fun onXsensDotRequestFlashInfoDone(address: String?, usedFlashSpace: Int, totalFlashSpace: Int) {
-        // get usedFlashSpace & totalFlashSpace, if the available flash space <= 10%, it cannot start recording
-        address?.let {
-            val storagePercent = if (totalFlashSpace != 0) (((totalFlashSpace - usedFlashSpace) / totalFlashSpace.toFloat()) * 100).toInt() else 0
-            val isStorageFull = if (totalFlashSpace != 0) (storagePercent <= 10) else false
-            val canStartRecording = !isStorageFull
-            mRecordingManagers[it]?.canRecord = canStartRecording
-            mFlashInfoCounter++
-
-            if (mFlashInfoCounter == mRecordingManagers.size) {
-                mFlashInfoCounter = 0
-                activity?.let { act ->
-                    act.runOnUiThread {
-                        mRecordingBinding?.btnStartStopRecording?.isEnabled = true
-                    }
-                }
-            }
-        }
-    }
-
-    private fun checkIfCanStartRecording() {
-        var canStart = true
-        for ((address, data) in mRecordingManagers) {
-            data?.let {
-                if (!it.canRecord) {
-                    canStart = false
-                }
-            }
-        }
-        if (canStart) {
-            startRecording()
-        }
-    }
-
     private fun startRecording() {
         for ((address, data) in mRecordingManagers) {
             data?.let {
@@ -260,6 +177,30 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
         }
         isRecording.postValue(false)
     }
+
+    private fun clearRecordingManagers() {
+        for ((_, manager) in mRecordingManagers) {
+            manager.recordingManager.clear()
+        }
+        mRecordingManagers.clear()
+    }
+
+    private fun checkIfCanStartRecording() {
+        var canStart = true
+        for ((address, data) in mRecordingManagers) {
+            data?.let {
+                if (!it.canRecord) {
+                    canStart = false
+                }
+            }
+        }
+        if (canStart) {
+            startRecording()
+        }
+    }
+    //endregion
+
+    //region List methods
 
     private fun getRecordingDataFromList(address: String): RecordingData? {
         if (mRecordingManagers.containsKey(address)) {
@@ -285,6 +226,40 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
             activity?.let { act ->
                 act.runOnUiThread {
                     mRecordingBinding?.rcvDevices?.adapter?.notifyItemChanged(index)
+                }
+            }
+        }
+    }
+    //endregion
+
+    //region Recording Callbacks
+    override fun onXsensDotRecordingNotification(address: String?, isEnabled: Boolean) {
+        //Callback from the recordingManager.enableRecordingNotification() method
+        address?.let {
+            mRecordingManagers[it]?.isNotificationEnabled = isEnabled
+            if (isEnabled) {
+                SystemClock.sleep(30)
+                mRecordingManagers[it]?.recordingManager?.requestFlashInfo()
+            }
+        }
+    }
+
+    override fun onXsensDotRequestFlashInfoDone(address: String?, usedFlashSpace: Int, totalFlashSpace: Int) {
+        ///Callback from the recordginManager.requestFlashInfo() method
+        // get usedFlashSpace & totalFlashSpace, if the available flash space <= 10%, it cannot start recording
+        address?.let {
+            val storagePercent = if (totalFlashSpace != 0) (((totalFlashSpace - usedFlashSpace) / totalFlashSpace.toFloat()) * 100).toInt() else 0
+            val isStorageFull = if (totalFlashSpace != 0) (storagePercent <= 10) else false
+            val canStartRecording = !isStorageFull
+            mRecordingManagers[it]?.canRecord = canStartRecording
+            mFlashInfoCounter++
+
+            if (mFlashInfoCounter == mRecordingManagers.size) {
+                mFlashInfoCounter = 0
+                activity?.let { act ->
+                    act.runOnUiThread {
+                        mRecordingBinding?.btnStartStopRecording?.isEnabled = true
+                    }
                 }
             }
         }
@@ -337,19 +312,15 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
     }
 
     override fun onXsensDotDataExported(p0: String?, p1: XsensDotRecordingFileInfo?, p2: XsensDotData?) {
-//        TODO("Not yet implemented")
     }
 
     override fun onXsensDotDataExported(p0: String?, p1: XsensDotRecordingFileInfo?) {
-//        TODO("Not yet implemented")
     }
 
     override fun onXsensDotAllDataExported(p0: String?) {
-//        TODO("Not yet implemented")
     }
 
     override fun onXsensDotStopExportingData(p0: String?) {
-//        TODO("Not yet implemented")
     }
 
     //endregion
