@@ -6,14 +6,20 @@
     <item
         android:id="@+id/action_scan"
         android:orderInCategory="0"
-        app:showAsAction="ifRoom"
-        android:title="@string/menu_stop_scan"/>
+        android:title="@string/menu_stop_scan"
+        app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_streaming"
         android:orderInCategory="1"
         android:title="@string/menu_start_streaming"
         app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_recording"
+        android:orderInCategory="1"
+        android:title="@string/menu_recording"
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_measure"

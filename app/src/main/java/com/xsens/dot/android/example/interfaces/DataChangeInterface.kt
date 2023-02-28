@@ -1,4 +1,4 @@
-//  Copyright (c) 2003-2020 Xsens Technologies B.V. or subsidiaries worldwide.
+//  Copyright (c) 2003-2020 Movella Technologies B.V. or subsidiaries worldwide.
 //  All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
@@ -28,21 +28,19 @@
 //  OF ARBITRATION OF THE INTERNATIONAL CHAMBER OF COMMERCE IN THE HAGUE BY ONE OR MORE
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
+package com.xsens.dot.android.example.interfaces
 
-package com.xsens.dot.android.example.interfaces;
-
-import com.xsens.dot.android.sdk.events.XsensDotData;
+import com.xsens.dot.android.sdk.events.XsensDotData
 
 /**
  * This class is to react data changes event between fragment and view model.
  */
-public interface DataChangeInterface {
-
+interface DataChangeInterface {
     /**
      * This function will be triggered when data is changed.
      *
      * @param address The mac address of device
      * @param data    The XsensDotData packet
      */
-    void onDataChanged(String address, XsensDotData data);
+    fun onDataChanged(address: String?, data: XsensDotData?)
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2003-2020 Xsens Technologies B.V. or subsidiaries worldwide.
+//  Copyright (c) 2003-2020 Movella Technologies B.V. or subsidiaries worldwide.
 //  All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
@@ -28,66 +28,41 @@
 //  OF ARBITRATION OF THE INTERNATIONAL CHAMBER OF COMMERCE IN THE HAGUE BY ONE OR MORE
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
+package com.xsens.dot.android.example.viewmodels
 
-package com.xsens.dot.android.example.viewmodels;
-
-import androidx.annotation.NonNull;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelStoreOwner;
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.NewInstanceFactory
+import androidx.lifecycle.ViewModelStoreOwner
 
 /**
  * A view model class for notifying data to views.
  */
-public class BluetoothViewModel extends ViewModel {
-
-    private static final String TAG = BluetoothViewModel.class.getSimpleName();
-
-    /**
-     * Get the instance of BluetoothViewModel
-     *
-     * @param owner The life cycle owner from activity/fragment
-     * @return The BluetoothViewModel
-     */
-    public static BluetoothViewModel getInstance(@NonNull ViewModelStoreOwner owner) {
-
-        return new ViewModelProvider(owner, new ViewModelProvider.NewInstanceFactory()).get(BluetoothViewModel.class);
-    }
-
-    // A variable to notify the Bluetooth status
-    private MutableLiveData<Boolean> mIsBluetoothEnabled = new MutableLiveData<>();
-    // A variable to notify the scanning status
-    private MutableLiveData<Boolean> mIsScanning = new MutableLiveData<>();
-
+class BluetoothViewModel : ViewModel() {
     /**
      * Observe this function to listen the status of Bluetooth adapter.
      *
      * @return The latest status
      */
-    public MutableLiveData<Boolean> isBluetoothEnabled() {
-
-        return mIsBluetoothEnabled;
-    }
-
-    /**
-     * Notify the Bluetooth adapter status to activity/fragment
-     *
-     * @param enabled he status of Bluetooth
-     */
-    public void updateBluetoothEnableState(boolean enabled) {
-
-        mIsBluetoothEnabled.postValue(enabled);
-    }
+    // A variable to notify the Bluetooth status
+    val isBluetoothEnabled = MutableLiveData<Boolean>()
 
     /**
      * Observe this function to listen the scanning status.
      *
      * @return The latest scan status
      */
-    public MutableLiveData<Boolean> isScanning() {
+    // A variable to notify the scanning status
+    val isScanning = MutableLiveData<Boolean>()
 
-        return mIsScanning;
+    /**
+     * Notify the Bluetooth adapter status to activity/fragment
+     *
+     * @param enabled he status of Bluetooth
+     */
+    fun updateBluetoothEnableState(enabled: Boolean) {
+        isBluetoothEnabled.postValue(enabled)
     }
 
     /**
@@ -95,8 +70,22 @@ public class BluetoothViewModel extends ViewModel {
      *
      * @param scanning The status of scanning
      */
-    public void updateScanState(boolean scanning) {
+    fun updateScanState(scanning: Boolean) {
+        isScanning.postValue(scanning)
+    }
 
-        mIsScanning.postValue(scanning);
+    companion object {
+        private val TAG = BluetoothViewModel::class.java.simpleName
+
+        /**
+         * Get the instance of BluetoothViewModel
+         *
+         * @param owner The life cycle owner from activity/fragment
+         * @return The BluetoothViewModel
+         */
+        @JvmStatic
+        fun getInstance(owner: ViewModelStoreOwner): BluetoothViewModel {
+            return ViewModelProvider(owner, NewInstanceFactory()).get(BluetoothViewModel::class.java)
+        }
     }
 }

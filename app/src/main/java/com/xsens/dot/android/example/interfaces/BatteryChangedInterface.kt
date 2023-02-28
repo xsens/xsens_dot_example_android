@@ -1,4 +1,4 @@
-//  Copyright (c) 2003-2020 Xsens Technologies B.V. or subsidiaries worldwide.
+//  Copyright (c) 2003-2020 Movella Technologies B.V. or subsidiaries worldwide.
 //  All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
@@ -28,18 +28,18 @@
 //  OF ARBITRATION OF THE INTERNATIONAL CHAMBER OF COMMERCE IN THE HAGUE BY ONE OR MORE
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
-
-package com.xsens.dot.android.example.interfaces;
+package com.xsens.dot.android.example.interfaces
 
 /**
- * This class is to react click event between fragment and activity.
+ * This class is to react battery changes event between fragment and view model.
  */
-public interface ScanClickInterface {
-
+interface BatteryChangedInterface {
     /**
-     * This function will be triggered when the start/stop scanning button is clicked.
+     * This function will be triggered when the battery information of sensor is changed.
      *
-     * @param started The status of scanning
+     * @param address    The mac address of device
+     * @param status     This state can be one of BATT_STATE_NOT_CHARGING or BATT_STATE_CHARGING
+     * @param percentage The range of battery level is 0 to 100
      */
-    void onScanTriggered(boolean started);
+    fun onBatteryChanged(address: String?, status: Int, percentage: Int)
 }

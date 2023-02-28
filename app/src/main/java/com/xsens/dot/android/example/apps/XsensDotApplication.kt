@@ -1,4 +1,4 @@
-//  Copyright (c) 2003-2020 Xsens Technologies B.V. or subsidiaries worldwide.
+//  Copyright (c) 2003-2020 Movella Technologies B.V. or subsidiaries worldwide.
 //  All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
@@ -28,41 +28,38 @@
 //  OF ARBITRATION OF THE INTERNATIONAL CHAMBER OF COMMERCE IN THE HAGUE BY ONE OR MORE
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
+package com.xsens.dot.android.example.apps
 
-package com.xsens.dot.android.example.apps;
-
-import android.app.Application;
-import android.util.Log;
-
-import com.xsens.dot.android.sdk.XsensDotSdk;
+import android.app.Application
+import android.util.Log
+import com.xsens.dot.android.sdk.XsensDotSdk
+import com.xsens.dot.android.example.apps.XsensDotApplication
 
 /**
  * A customized application class for basic initialization.
  */
-public class XsensDotApplication extends Application {
-
-    private static final String TAG = XsensDotApplication.class.getSimpleName();
-
-    @Override
-    public void onCreate() {
-
-        super.onCreate();
-
-        initXsensDotSdk();
+class XsensDotApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        initXsensDotSdk()
     }
 
     /**
      * Setup for Xsens DOT SDK.
      */
-    private void initXsensDotSdk() {
+    private fun initXsensDotSdk() {
 
         // Get the version name of SDK.
-        String version = XsensDotSdk.getSdkVersion();
-        Log.i(TAG, "initXsensDotSdk() - version: " + version);
+        val version = XsensDotSdk.getSdkVersion()
+        Log.i(TAG, "initXsensDotSdk() - version: $version")
 
         // Enable this feature to monitor logs from SDK.
-        XsensDotSdk.setDebugEnabled(true);
+        XsensDotSdk.setDebugEnabled(true)
         // Enable this feature then SDK will start reconnection when the connection is lost.
-        XsensDotSdk.setReconnectEnabled(true);
+        XsensDotSdk.setReconnectEnabled(true)
+    }
+
+    companion object {
+        private val TAG = XsensDotApplication::class.java.simpleName
     }
 }
