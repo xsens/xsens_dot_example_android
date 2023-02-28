@@ -1,4 +1,4 @@
-//  Copyright (c) 2003-2020 Xsens Technologies B.V. or subsidiaries worldwide.
+//  Copyright (c) 2003-2020 Movella Technologies B.V. or subsidiaries worldwide.
 //  All rights reserved.
 //
 //  Redistribution and use in source and binary forms, with or without modification,
@@ -28,16 +28,19 @@
 //  OF ARBITRATION OF THE INTERNATIONAL CHAMBER OF COMMERCE IN THE HAGUE BY ONE OR MORE
 //  ARBITRATORS APPOINTED IN ACCORDANCE WITH SAID RULES.
 //
+package com.xsens.dot.android.example.interfaces
 
-package com.xsens.dot.android.example.interfaces;
+import android.view.View
 
 /**
- * This class is to react click event between fragment and activity.
+ * This class is to react click event between fragment and adapter.
  */
-public interface StreamingClickInterface {
-
+interface SensorClickInterface {
     /**
-     * This function will be triggered when the start/stop measurement button is clicked.
+     * This function will be triggered when the item view is clicked.
+     *
+     * @param v        The item view
+     * @param position The position of item view
      */
-    void onStreamingTriggered();
+    fun onSensorClick(v: View?, position: Int)
 }

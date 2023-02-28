@@ -6,13 +6,21 @@
     <!-- Add permissions for using Xsens DOT SDK -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
 
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="false" />
 
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <application
         android:name=".apps.XsensDotApplication"
         android:allowBackup="true"
@@ -21,9 +29,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity
+            android:name=".views.RecordingFileSelectionActivity"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.AppCompat.Light.Dialog.Alert" />
 
         <activity
             android:name=".views.MainActivity"
+            android:exported="true"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity">
             <intent-filter>
