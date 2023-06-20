@@ -49,16 +49,16 @@ import com.xsens.dot.android.example.R
 import com.xsens.dot.android.example.adapters.RecordingAdapter
 import com.xsens.dot.android.example.databinding.FragmentRecordingBinding
 import com.xsens.dot.android.example.viewmodels.SensorViewModel
-import com.xsens.dot.android.sdk.events.XsensDotData
-import com.xsens.dot.android.sdk.interfaces.XsensDotRecordingCallback
-import com.xsens.dot.android.sdk.models.XsensDotDevice
-import com.xsens.dot.android.sdk.models.XsensDotRecordingFileInfo
-import com.xsens.dot.android.sdk.models.XsensDotRecordingState
-import com.xsens.dot.android.sdk.recording.XsensDotRecordingManager
+import com.xsens.dot.android.sdk.events.DotData
+import com.xsens.dot.android.sdk.interfaces.DotRecordingCallback
+import com.xsens.dot.android.sdk.models.DotDevice
+import com.xsens.dot.android.sdk.models.DotRecordingFileInfo
+import com.xsens.dot.android.sdk.models.DotRecordingState
+import com.xsens.dot.android.sdk.recording.DotRecordingManager
 import java.util.HashMap
 import kotlin.collections.ArrayList
 
-class RecordingFragment : Fragment(), XsensDotRecordingCallback {
+class RecordingFragment : Fragment(), DotRecordingCallback {
 
     private var recordingObserver: Observer<Boolean>? = null
     private var mRecordingBinding: FragmentRecordingBinding? = null
@@ -115,7 +115,7 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
             binding.btnRequestFileInfo.setOnClickListener {
 
                 clearRecordingManagers()
-                val fragmentManager = activity!!.supportFragmentManager
+                val fragmentManager = requireActivity().supportFragmentManager
                 val fragmentTransaction = fragmentManager.beginTransaction()
                 fragmentTransaction.replace(R.id.container, ExportFragment(), ExportFragment.TAG)
                 fragmentTransaction.setReorderingAllowed(true)
@@ -154,7 +154,7 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
 
     private fun bindViewModel() {
         if (activity != null) {
-            mSensorViewModel = SensorViewModel.getInstance(activity!!)
+            mSensorViewModel = SensorViewModel.getInstance(requireActivity())
         }
     }
     //endregion
@@ -172,7 +172,7 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
                 clearRecordingManagers()
                 mRecordingDataList.clear()
                 for (device in it) {
-                    val recordingManager = XsensDotRecordingManager(context!!, device, this)
+                    val recordingManager = DotRecordingManager(requireContext(), device, this)
                     val recordingData = RecordingData(device = device, canRecord = false, recordingManager = recordingManager, isNotificationEnabled = false, isRecording = false)
 
                     mRecordingManagers[device.address] = recordingData
@@ -265,7 +265,7 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
     //endregion
 
     //region Recording Callbacks
-    override fun onXsensDotRecordingNotification(address: String?, isEnabled: Boolean) {
+    override fun onDotRecordingNotification(address: String?, isEnabled: Boolean) {
         //Callback from the recordingManager.enableRecordingNotification() method
         address?.let {
             mRecordingManagers[it]?.isNotificationEnabled = isEnabled
@@ -276,7 +276,7 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
         }
     }
 
-    override fun onXsensDotRequestFlashInfoDone(address: String?, usedFlashSpace: Int, totalFlashSpace: Int) {
+    override fun onDotRequestFlashInfoDone(address: String?, usedFlashSpace: Int, totalFlashSpace: Int) {
         ///Callback from the recordginManager.requestFlashInfo() method
         // get usedFlashSpace & totalFlashSpace, if the available flash space <= 10%, it cannot start recording
         address?.let {
@@ -297,62 +297,62 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
         }
     }
 
-    override fun onXsensDotEraseDone(address: String?, isSuccess: Boolean) {
+    override fun onDotEraseDone(address: String?, isSuccess: Boolean) {
 
     }
 
-    override fun onXsensDotRecordingAck(address: String?, recordingId: Int, isSuccess: Boolean, recordingState: XsensDotRecordingState?) {
-        if (recordingId == XsensDotRecordingManager.RECORDING_ID_START_RECORDING) {
+    override fun onDotRecordingAck(address: String?, recordingId: Int, isSuccess: Boolean, recordingState: DotRecordingState?) {
+        if (recordingId == DotRecordingManager.RECORDING_ID_START_RECORDING) {
             // start recording result, check recordingState, it should be success or fail.
             address?.let {
                 getRecordingDataFromList(it)?.let { data ->
-                    data.isRecording = recordingState == XsensDotRecordingState.success
+                    data.isRecording = recordingState == DotRecordingState.success
                     updateRecyclerViewItemByAddress(address)
                 }
             }
-        } else if (recordingId == XsensDotRecordingManager.RECORDING_ID_STOP_RECORDING) {
+        } else if (recordingId == DotRecordingManager.RECORDING_ID_STOP_RECORDING) {
             // stop recording result, check recordingState, it should be success or fail.
 
             address?.let {
                 getRecordingDataFromList(it)?.let { data ->
-                    data.isRecording = !(recordingState == XsensDotRecordingState.success)
+                    data.isRecording = !(recordingState == DotRecordingState.success)
                     updateRecyclerViewItemByAddress(address)
                 }
             }
-        } else if (recordingId == XsensDotRecordingManager.RECORDING_ID_GET_STATE) {
+        } else if (recordingId == DotRecordingManager.RECORDING_ID_GET_STATE) {
             //Get recording status using mRecordingManager.requestRecordingState()
-            if (recordingState == XsensDotRecordingState.onErasing
-                || recordingState == XsensDotRecordingState.onExportFlashInfo
-                || recordingState == XsensDotRecordingState.onRecording
-                || recordingState == XsensDotRecordingState.onExportRecordingFileInfo
-                || recordingState == XsensDotRecordingState.onExportRecordingFileData
+            if (recordingState == DotRecordingState.onErasing
+                || recordingState == DotRecordingState.onExportFlashInfo
+                || recordingState == DotRecordingState.onRecording
+                || recordingState == DotRecordingState.onExportRecordingFileInfo
+                || recordingState == DotRecordingState.onExportRecordingFileData
             ) {
 
             }
         }
     }
 
-    override fun onXsensDotGetRecordingTime(address: String?, startUTCSeconds: Int, totalRecordingSeconds: Int, remainingRecordingSeconds: Int) {
+    override fun onDotGetRecordingTime(address: String?, startUTCSeconds: Int, totalRecordingSeconds: Int, remainingRecordingSeconds: Int) {
         address?.let {
             Log.d("TIME ::::: ", "$totalRecordingSeconds ___ $remainingRecordingSeconds")
         }
     }
 
-    override fun onXsensDotRequestFileInfoDone(address: String?, list: ArrayList<XsensDotRecordingFileInfo>?, isSuccess: Boolean) {
+    override fun onDotRequestFileInfoDone(address: String?, list: ArrayList<DotRecordingFileInfo>?, isSuccess: Boolean) {
         // A list of file information can be obtained, one message contains: fileId, fileName, dataSize
         address?.let { }
     }
 
-    override fun onXsensDotDataExported(p0: String?, p1: XsensDotRecordingFileInfo?, p2: XsensDotData?) {
+    override fun onDotDataExported(p0: String?, p1: DotRecordingFileInfo?, p2: DotData?) {
     }
 
-    override fun onXsensDotDataExported(p0: String?, p1: XsensDotRecordingFileInfo?) {
+    override fun onDotDataExported(p0: String?, p1: DotRecordingFileInfo?) {
     }
 
-    override fun onXsensDotAllDataExported(p0: String?) {
+    override fun onDotAllDataExported(p0: String?) {
     }
 
-    override fun onXsensDotStopExportingData(p0: String?) {
+    override fun onDotStopExportingData(p0: String?) {
     }
 
     //endregion
@@ -360,10 +360,10 @@ class RecordingFragment : Fragment(), XsensDotRecordingCallback {
 
 
 data class RecordingData(
-    var device: XsensDotDevice,
+    var device: DotDevice,
     var canRecord: Boolean,
     var isNotificationEnabled: Boolean = false,
-    var recordingManager: XsensDotRecordingManager,
+    var recordingManager: DotRecordingManager,
     var isRecording: Boolean = false
 ) {
     var recordingFileInfoList: ArrayList<XsRecordingFileInfo> = ArrayList()

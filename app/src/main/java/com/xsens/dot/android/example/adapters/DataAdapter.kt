@@ -39,7 +39,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.view.View
 import com.xsens.dot.android.example.adapters.DataAdapter
-import com.xsens.dot.android.sdk.events.XsensDotData
+import com.xsens.dot.android.sdk.events.DotData
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import android.widget.TextView
 import java.util.ArrayList
@@ -66,7 +66,7 @@ class DataAdapter
     @SuppressLint("DefaultLocale")
     override fun onBindViewHolder(holder: DataViewHolder, position: Int) {
         val tag = mDataList!![position][KEY_TAG] as String?
-        val xsData = mDataList[position][KEY_DATA] as XsensDotData?
+        val xsData = mDataList[position][KEY_DATA] as DotData?
         holder.sensorName.text = tag
         val eulerAngles = xsData!!.euler
         val eulerAnglesStr = String.format("%.6f", eulerAngles[0]) + ", " + String.format("%.6f", eulerAngles[1]) + ", " + String.format("%.6f", eulerAngles[2])

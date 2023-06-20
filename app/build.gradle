@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
     buildToolsVersion "29.0.2"
 
     defaultConfig {
@@ -38,6 +38,6 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
-    // Import Xsens DOT SDK
-    implementation(name: 'XsensDotSdkCore2', ext: 'aar')
+    // Import Movella DOT SDK
+    implementation(name: 'MovellaDotSdkCore', ext: 'aar')
 }

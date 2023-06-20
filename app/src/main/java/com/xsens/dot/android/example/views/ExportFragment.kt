@@ -56,12 +56,12 @@ import com.xsens.dot.android.example.databinding.FragmentExportBinding
 import com.xsens.dot.android.example.interfaces.FileSelectionCallback
 import com.xsens.dot.android.example.utils.ProgressDialog
 import com.xsens.dot.android.example.viewmodels.SensorViewModel
-import com.xsens.dot.android.sdk.events.XsensDotData
-import com.xsens.dot.android.sdk.interfaces.XsensDotRecordingCallback
-import com.xsens.dot.android.sdk.models.XsensDotDevice
-import com.xsens.dot.android.sdk.models.XsensDotRecordingFileInfo
-import com.xsens.dot.android.sdk.models.XsensDotRecordingState
-import com.xsens.dot.android.sdk.recording.XsensDotRecordingManager
+import com.xsens.dot.android.sdk.events.DotData
+import com.xsens.dot.android.sdk.interfaces.DotRecordingCallback
+import com.xsens.dot.android.sdk.models.DotDevice
+import com.xsens.dot.android.sdk.models.DotRecordingFileInfo
+import com.xsens.dot.android.sdk.models.DotRecordingState
+import com.xsens.dot.android.sdk.recording.DotRecordingManager
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -72,7 +72,7 @@ import kotlin.collections.ArrayList
  * Use the [ExportFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallback {
+class ExportFragment : Fragment(), DotRecordingCallback, FileSelectionCallback {
 
 
     private var isExporting: Boolean = false
@@ -80,7 +80,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
     private var mSensorsTotalExportingCount: Int = 0
     private var mCurrentExportingDir: String = ""
     private var mSelectExportedDataIds: ByteArray? = null
-    private val mExportingDeviceList: ArrayList<XsensDotDevice> = ArrayList()
+    private val mExportingDeviceList: ArrayList<DotDevice> = ArrayList()
     private val mExportingCompletedDeviceList: ArrayList<String> = ArrayList()
     private val mExportingInProgressDeviceList: ArrayList<String> = ArrayList()
     private val mExportingFailedDeviceList: ArrayList<String> = ArrayList()
@@ -199,7 +199,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
 
     //region Alert Dialogs
     private fun showProgressDialog() {
-        mProgressDialog = ProgressDialog(activity!!).apply {
+        mProgressDialog = ProgressDialog(requireActivity()).apply {
             createDialog()
             setStopButtonListener {
                 stopExporting()
@@ -228,7 +228,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
     //region Private methods
     private fun bindViewModel() {
         if (activity != null) {
-            mSensorViewModel = SensorViewModel.getInstance(activity!!)
+            mSensorViewModel = SensorViewModel.getInstance(requireActivity())
         }
     }
 
@@ -249,7 +249,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
                 clearRecordingManagers()
                 mRecordingDataList.clear()
                 for (device in it) {
-                    val recordingManager = XsensDotRecordingManager(context!!, device, this)
+                    val recordingManager = DotRecordingManager(requireContext(), device, this)
                     val recordingData = RecordingData(device = device, canRecord = false, recordingManager = recordingManager, isNotificationEnabled = false, isRecording = false)
                     mRecordingManagers[device.address] = recordingData
                     mRecordingDataList.add(recordingData)
@@ -278,7 +278,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
 
     //region List methods
 
-    private fun getXsensDotDeviceByAddress(address: String): XsensDotDevice? {
+    private fun getXsensDotDeviceByAddress(address: String): DotDevice? {
         getRecordingDataFromList(address)?.let { data ->
             return data.device
         }
@@ -323,10 +323,10 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
 
             if (mSelectExportedDataIds == null) {
                 mSelectExportedDataIds = byteArrayOf(
-                    XsensDotRecordingManager.RECORDING_DATA_ID_TIMESTAMP,
-                    XsensDotRecordingManager.RECORDING_DATA_ID_EULER_ANGLES,
-                    XsensDotRecordingManager.RECORDING_DATA_ID_CALIBRATED_ACC,
-                    XsensDotRecordingManager.RECORDING_DATA_ID_CALIBRATED_GYR
+                    DotRecordingManager.RECORDING_DATA_ID_TIMESTAMP,
+                    DotRecordingManager.RECORDING_DATA_ID_EULER_ANGLES,
+                    DotRecordingManager.RECORDING_DATA_ID_CALIBRATED_ACC,
+                    DotRecordingManager.RECORDING_DATA_ID_CALIBRATED_GYR
                 )
             }
 
@@ -334,12 +334,12 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
                 val isSuccess = selectExportedData(ids)
 
                 if (isSuccess) {
-                    val map = HashMap<String, ArrayList<XsensDotRecordingFileInfo>>()
+                    val map = HashMap<String, ArrayList<DotRecordingFileInfo>>()
 
                     for ((key, value) in mCheckedFileInfoMap.entries) {
-                        val infoList = ArrayList<XsensDotRecordingFileInfo>()
+                        val infoList = ArrayList<DotRecordingFileInfo>()
                         for (info in value) {
-                            val newInfo = XsensDotRecordingFileInfo(info.id, info.fileName, info.size)
+                            val newInfo = DotRecordingFileInfo(info.id, info.fileName, info.size)
                             newInfo.startRecordingTimestamp = info.startRecordingTimestamp
                             infoList.add(newInfo)
                         }
@@ -471,7 +471,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
 
     //region Callback Methods
 
-    override fun onXsensDotRecordingNotification(address: String?, isEnabled: Boolean) {
+    override fun onDotRecordingNotification(address: String?, isEnabled: Boolean) {
         address?.let {
             mRecordingManagers[it]?.isNotificationEnabled = isEnabled
             if (isEnabled) {
@@ -481,11 +481,11 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
         }
     }
 
-    override fun onXsensDotEraseDone(p0: String?, p1: Boolean) {
+    override fun onDotEraseDone(p0: String?, p1: Boolean) {
 
     }
 
-    override fun onXsensDotRequestFlashInfoDone(address: String?, usedFlashSpace: Int, totalFlashSpace: Int) {
+    override fun onDotRequestFlashInfoDone(address: String?, usedFlashSpace: Int, totalFlashSpace: Int) {
         // get usedFlashSpace & totalFlashSpace, if the available flash space <= 10%, it cannot start recording
         address?.let {
             val storagePercent = if (totalFlashSpace != 0) (((totalFlashSpace - usedFlashSpace) / totalFlashSpace.toFloat()) * 100).toInt() else 0
@@ -507,14 +507,14 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
         }
     }
 
-    override fun onXsensDotRecordingAck(p0: String?, p1: Int, p2: Boolean, p3: XsensDotRecordingState?) {
+    override fun onDotRecordingAck(p0: String?, p1: Int, p2: Boolean, p3: DotRecordingState?) {
 
     }
 
-    override fun onXsensDotGetRecordingTime(p0: String?, p1: Int, p2: Int, p3: Int) {
+    override fun onDotGetRecordingTime(p0: String?, p1: Int, p2: Int, p3: Int) {
     }
 
-    override fun onXsensDotRequestFileInfoDone(address: String?, fileList: ArrayList<XsensDotRecordingFileInfo>?, isSuccess: Boolean) {
+    override fun onDotRequestFileInfoDone(address: String?, fileList: ArrayList<DotRecordingFileInfo>?, isSuccess: Boolean) {
         address?.let {
             getRecordingDataFromList(it)?.let { recordingData ->
                 val recordingFileInfoList: ArrayList<XsRecordingFileInfo> = ArrayList()
@@ -530,7 +530,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
         }
     }
 
-    override fun onXsensDotDataExported(address: String?, fileInfo: XsensDotRecordingFileInfo?, p2: XsensDotData?) {
+    override fun onDotDataExported(address: String?, fileInfo: DotRecordingFileInfo?, p2: DotData?) {
         address?.let {
             fileInfo?.let {
 
@@ -538,7 +538,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
         }
     }
 
-    override fun onXsensDotDataExported(address: String?, fileInfo: XsensDotRecordingFileInfo?) {
+    override fun onDotDataExported(address: String?, fileInfo: DotRecordingFileInfo?) {
         address?.let {
             fileInfo?.let { info ->
                 Log.d(TAG, "EXPORTED FILE : ${info.fileName}")
@@ -546,7 +546,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
         }
     }
 
-    override fun onXsensDotAllDataExported(address: String?) {
+    override fun onDotAllDataExported(address: String?) {
         address?.let {
             activity?.let {
                 it.runOnUiThread {
@@ -557,7 +557,7 @@ class ExportFragment : Fragment(), XsensDotRecordingCallback, FileSelectionCallb
         }
     }
 
-    override fun onXsensDotStopExportingData(address: String?) {
+    override fun onDotStopExportingData(address: String?) {
         address?.let {
             dismissProgressDialog()
         }

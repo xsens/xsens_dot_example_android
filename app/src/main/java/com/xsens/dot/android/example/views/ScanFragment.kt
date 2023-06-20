@@ -55,14 +55,14 @@ import com.xsens.dot.android.example.interfaces.ScanClickInterface
 import com.xsens.dot.android.example.interfaces.SensorClickInterface
 import com.xsens.dot.android.example.viewmodels.BluetoothViewModel
 import com.xsens.dot.android.example.viewmodels.SensorViewModel
-import com.xsens.dot.android.sdk.interfaces.XsensDotScannerCallback
-import com.xsens.dot.android.sdk.models.XsensDotDevice
-import com.xsens.dot.android.sdk.utils.XsensDotScanner
+import com.xsens.dot.android.sdk.interfaces.DotScannerCallback
+import com.xsens.dot.android.sdk.models.DotDevice
+import com.xsens.dot.android.sdk.utils.DotScanner
 
 /**
  * A fragment for scanned item.
  */
-class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, ScanClickInterface, BatteryChangedInterface {
+class ScanFragment : Fragment(), DotScannerCallback, SensorClickInterface, ScanClickInterface, BatteryChangedInterface {
     // The view binder of ScanFragment
     private var mBinding: FragmentScanBinding? = null
 
@@ -79,7 +79,7 @@ class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, 
     private val mScannedSensorList = ArrayList<HashMap<String, Any>>()
 
     // The XsensDotScanner object
-    private var mXsDotScanner: XsensDotScanner? = null
+    private var mXsDotScanner: DotScanner? = null
 
     // A variable for scanning flag
     private var mIsScanning = false
@@ -172,7 +172,7 @@ class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, 
         }
     }
 
-    override fun onXsensDotScanned(device: BluetoothDevice, rssi: Int) {
+    override fun onDotScanned(device: BluetoothDevice, rssi: Int) {
 
 //        Log.i(TAG, "onXsensDotScanned() - Name: " + device.getName() + ", Address: " + device.getAddress());
         if (isAdded) {
@@ -188,7 +188,7 @@ class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, 
                 // Also set tag, battery state, battery percentage to default value.
                 val map = HashMap<String, Any>()
                 map[ScanAdapter.KEY_DEVICE] = device
-                map[ScanAdapter.KEY_CONNECTION_STATE] = XsensDotDevice.CONN_STATE_DISCONNECTED
+                map[ScanAdapter.KEY_CONNECTION_STATE] = DotDevice.CONN_STATE_DISCONNECTED
                 map[ScanAdapter.KEY_TAG] = ""
                 map[ScanAdapter.KEY_BATTERY_STATE] = -1
                 map[ScanAdapter.KEY_BATTERY_PERCENTAGE] = -1
@@ -207,22 +207,22 @@ class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, 
         val state = mScanAdapter!!.getConnectionState(position)
         val device = mScanAdapter!!.getDevice(position)
         when (state) {
-            XsensDotDevice.CONN_STATE_DISCONNECTED -> {
+            DotDevice.CONN_STATE_DISCONNECTED -> {
                 mConnectionDialog!!.show()
                 // The sensor isn't exist in the mSensorList(SensorViewModel), try to connect and add it.
                 mSensorViewModel!!.connectSensor(context, device)
             }
-            XsensDotDevice.CONN_STATE_CONNECTING -> {
-                mScanAdapter!!.updateConnectionState(position, XsensDotDevice.CONN_STATE_DISCONNECTED)
+            DotDevice.CONN_STATE_CONNECTING -> {
+                mScanAdapter!!.updateConnectionState(position, DotDevice.CONN_STATE_DISCONNECTED)
                 mScanAdapter!!.notifyItemChanged(position)
                 // This line is necessary to close Bluetooth gatt.
                 mSensorViewModel!!.disconnectSensor(device!!.address)
                 // Remove this sensor from device list.
                 mSensorViewModel!!.removeDevice(device.address)
             }
-            XsensDotDevice.CONN_STATE_CONNECTED -> mSensorViewModel!!.disconnectSensor(device!!.address)
-            XsensDotDevice.CONN_STATE_RECONNECTING -> {
-                mScanAdapter!!.updateConnectionState(position, XsensDotDevice.CONN_STATE_DISCONNECTED)
+            DotDevice.CONN_STATE_CONNECTED -> mSensorViewModel!!.disconnectSensor(device!!.address)
+            DotDevice.CONN_STATE_RECONNECTING -> {
+                mScanAdapter!!.updateConnectionState(position, DotDevice.CONN_STATE_DISCONNECTED)
                 mScanAdapter!!.notifyItemChanged(position)
                 // This line is necessary to close Bluetooth gatt.
                 mSensorViewModel!!.cancelReconnection(device!!.address)
@@ -264,7 +264,7 @@ class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, 
                     }
                 }
                 when (state) {
-                    XsensDotDevice.CONN_STATE_CONNECTED -> if (mConnectionDialog!!.isShowing) mConnectionDialog!!.dismiss()
+                    DotDevice.CONN_STATE_CONNECTED -> if (mConnectionDialog!!.isShowing) mConnectionDialog!!.dismiss()
                 }
             }
             mSensorViewModel!!.tagChangedDevice.observe(this) { device ->
@@ -279,11 +279,11 @@ class ScanFragment : Fragment(), XsensDotScannerCallback, SensorClickInterface, 
     }
 
     /**
-     * Setup for Xsens DOT scanner.
+     * Setup for Movella DOT scanner.
      */
     private fun initXsDotScanner() {
         if (mXsDotScanner == null) {
-            mXsDotScanner = XsensDotScanner(context, this)
+            mXsDotScanner = DotScanner(context, this)
             mXsDotScanner!!.setScanMode(ScanSettings.SCAN_MODE_BALANCED)
         }
     }

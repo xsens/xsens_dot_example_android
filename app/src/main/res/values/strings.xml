@@ -1,6 +1,6 @@
 <resources>
 
-    <string name="app_name">Xsens DOT Example</string>
+    <string name="app_name">Movella DOT Example</string>
 
     <string name="hint_turn_on_bluetooth">Please turn on the Bluetooth adapter.</string>
     <string name="hint_allow_location">Please allow location permission to use sensor(s).</string>
