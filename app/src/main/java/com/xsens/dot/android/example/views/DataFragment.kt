@@ -53,12 +53,12 @@ import com.xsens.dot.android.example.interfaces.StreamingClickInterface
 import com.xsens.dot.android.example.viewmodels.SensorViewModel
 import com.xsens.dot.android.example.viewmodels.SensorViewModel.Companion.getInstance
 import com.xsens.dot.android.example.views.DataFragment
-import com.xsens.dot.android.sdk.events.XsensDotData
-import com.xsens.dot.android.sdk.interfaces.XsensDotRecordingCallback
-import com.xsens.dot.android.sdk.interfaces.XsensDotSyncCallback
+import com.xsens.dot.android.sdk.events.DotData
+import com.xsens.dot.android.sdk.interfaces.DotRecordingCallback
+import com.xsens.dot.android.sdk.interfaces.DotSyncCallback
 import com.xsens.dot.android.sdk.models.*
-import com.xsens.dot.android.sdk.recording.XsensDotRecordingManager
-import com.xsens.dot.android.sdk.utils.XsensDotLogger
+import com.xsens.dot.android.sdk.recording.DotRecordingManager
+import com.xsens.dot.android.sdk.utils.DotLogger
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -66,7 +66,7 @@ import java.util.*
 /**
  * A fragment for presenting the data and storing to file.
  */
-class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, XsensDotSyncCallback {
+class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, DotSyncCallback {
     // The view binder of DataFragment
     private var mBinding: FragmentDataBinding? = null
 
@@ -100,8 +100,8 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        mSensorViewModel!!.setStates(XsensDotDevice.PLOT_STATE_ON, XsensDotDevice.LOG_STATE_ON)
-        mDataAdapter = DataAdapter(context!!, mDataList)
+        mSensorViewModel!!.setStates(DotDevice.PLOT_STATE_ON, DotDevice.LOG_STATE_ON)
+        mDataAdapter = DataAdapter(requireContext(), mDataList)
         mBinding!!.dataRecyclerView.layoutManager = LinearLayoutManager(context)
         mBinding!!.dataRecyclerView.itemAnimator = DefaultItemAnimator()
         mBinding!!.dataRecyclerView.adapter = mDataAdapter
@@ -124,7 +124,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
 
         // Notify main activity to refresh menu.
         MainActivity.sCurrentFragment = MainActivity.FRAGMENT_TAG_DATA
-        if (activity != null) activity!!.invalidateOptionsMenu()
+        if (activity != null) requireActivity().invalidateOptionsMenu()
     }
 
     override fun onDetach() {
@@ -142,7 +142,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
             // To stop.
             mSensorViewModel!!.setMeasurement(false)
             mSensorViewModel!!.updateStreamingStatus(false)
-            XsensDotSyncManager.getInstance(this).stopSyncing()
+            DotSyncManager.getInstance(this).stopSyncing()
             closeFiles()
         } else {
             // To start.
@@ -156,7 +156,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
             mSensorViewModel!!.setRootDevice(true)
             val devices = mSensorViewModel!!.allSensors
             // Devices will disconnect during the syncing, and do reconnection automatically.
-            XsensDotSyncManager.getInstance(this).startSyncing(devices!!, SYNCING_REQUEST_CODE)
+            DotSyncManager.getInstance(this).startSyncing(devices!!, SYNCING_REQUEST_CODE)
             if (!mSyncingDialog!!.isShowing) mSyncingDialog!!.show()
         }
     }
@@ -166,7 +166,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
      */
     private fun bindViewModel() {
         if (activity != null) {
-            mSensorViewModel = getInstance(activity!!)
+            mSensorViewModel = getInstance(requireActivity())
             // Implement DataChangeInterface and override onDataChanged() function to receive data.
             mSensorViewModel!!.setDataChangeCallback(this)
         }
@@ -187,7 +187,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
      * @param device The XsensDotDevice object
      * @return The filter profile name, "General" by default
      */
-    private fun getFilterProfileName(device: XsensDotDevice): String {
+    private fun getFilterProfileName(device: DotDevice): String {
         val index = device.currentFilterProfileIndex
         val list = device.filterProfileInfoList
         for (info in list) {
@@ -201,7 +201,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
      */
     private fun createFiles() {
 
-        // Remove XsensDotLogger objects from list before start data logging.
+        // Remove DotLogger objects from list before start data logging.
         mLoggerList.clear()
         val devices = mSensorViewModel!!.allSensors
         for (device in devices!!) {
@@ -214,7 +214,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
 
                 // Store log file in app internal folder.
                 // Don't need user to granted the storage permission.
-                val dir = context!!.getExternalFilesDir(null)
+                val dir = requireContext().getExternalFilesDir(null)
                 if (dir != null) {
 
                     // This filename contains full file path.
@@ -226,10 +226,10 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
                 }
             }
             Log.d(TAG, "createFiles() - $filename")
-            val logger = XsensDotLogger(
+            val logger = DotLogger(
                 context,
-                XsensDotLogger.TYPE_CSV,
-                XsensDotPayload.PAYLOAD_TYPE_COMPLETE_EULER,
+                DotLogger.TYPE_CSV,
+                DotPayload.PAYLOAD_TYPE_COMPLETE_EULER,
                 filename,
                 tag,
                 fwVersion,
@@ -252,14 +252,14 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
      * Update data to specific file.
      *
      * @param address The mac address of device
-     * @param data    The XsensDotData packet
+     * @param data    The DotData packet
      */
-    private fun updateFiles(address: String?, data: XsensDotData?) {
+    private fun updateFiles(address: String?, data: DotData?) {
         for (map in mLoggerList) {
             val _address = map[DataAdapter.KEY_ADDRESS] as String?
             if (_address != null) {
                 if (_address == address) {
-                    val logger = map[KEY_LOGGER] as XsensDotLogger?
+                    val logger = map[KEY_LOGGER] as DotLogger?
                     if (logger != null && mIsLogging) logger.update(data)
                 }
             }
@@ -275,7 +275,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
             // Call stop() function to flush and close the output stream.
             // Data is kept in the stream buffer and write to file when the buffer is full.
             // Call this function to write data to file whether the buffer is full or not.
-            val logger = map[KEY_LOGGER] as XsensDotLogger?
+            val logger = map[KEY_LOGGER] as DotLogger?
             logger?.stop()
         }
     }
@@ -289,7 +289,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
         if (requestCode == SYNCING_REQUEST_CODE) {
             if (mSyncingDialog!!.isShowing) {
                 if (activity != null) {
-                    activity!!.runOnUiThread { // Find the view of progress bar in dialog layout and update.
+                    requireActivity().runOnUiThread { // Find the view of progress bar in dialog layout and update.
                         val bar = mSyncingDialog!!.findViewById<ProgressBar>(R.id.syncing_progress)
                         if (bar != null) bar.progress = progress
                     }
@@ -306,14 +306,14 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
         Log.i(TAG, "onSyncingDone() - isSuccess = $isSuccess, requestCode = $requestCode")
         if (requestCode == SYNCING_REQUEST_CODE) {
             if (activity != null) {
-                activity!!.runOnUiThread {
+                requireActivity().runOnUiThread {
                     if (mSyncingDialog!!.isShowing) mSyncingDialog!!.dismiss()
                     mSensorViewModel!!.setRootDevice(false)
                     if (isSuccess) {
                         mBinding!!.syncResult.setText(R.string.sync_result_success)
 
                         // Syncing precess is success, choose one measurement mode to start measuring.
-                        mSensorViewModel!!.setMeasurementMode(XsensDotPayload.PAYLOAD_TYPE_COMPLETE_EULER)
+                        mSensorViewModel!!.setMeasurementMode(DotPayload.PAYLOAD_TYPE_COMPLETE_EULER)
                         createFiles()
                         mSensorViewModel!!.setMeasurement(true)
                         // Notify the current streaming status to MainActivity to refresh the menu.
@@ -342,7 +342,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
         Log.i(TAG, "onSyncingStopped() - address = $address, isSuccess = $isSuccess, requestCode = $requestCode")
     }
 
-    override fun onDataChanged(address: String?, data: XsensDotData?) {
+    override fun onDataChanged(address: String?, data: DotData?) {
         Log.i(TAG, "onDataChanged() - address = $address")
         var isExist = false
         for (map in mDataList) {
@@ -364,7 +364,7 @@ class DataFragment : Fragment(), StreamingClickInterface, DataChangeInterface, X
         }
         updateFiles(address, data)
         if (activity != null) {
-            activity!!.runOnUiThread { // The data is coming from background thread, change to UI thread for updating.
+            requireActivity().runOnUiThread { // The data is coming from background thread, change to UI thread for updating.
                 mDataAdapter!!.notifyDataSetChanged()
             }
         }

@@ -30,7 +30,7 @@
 //
 package com.xsens.dot.android.example.interfaces
 
-import com.xsens.dot.android.sdk.events.XsensDotData
+import com.xsens.dot.android.sdk.events.DotData
 
 /**
  * This class is to react data changes event between fragment and view model.
@@ -40,7 +40,7 @@ interface DataChangeInterface {
      * This function will be triggered when data is changed.
      *
      * @param address The mac address of device
-     * @param data    The XsensDotData packet
+     * @param data    The DotData packet
      */
-    fun onDataChanged(address: String?, data: XsensDotData?)
+    fun onDataChanged(address: String?, data: DotData?)
 }

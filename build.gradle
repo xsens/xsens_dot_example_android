@@ -26,7 +26,7 @@ allprojects {
         jcenter()
 
         // Add local libs repo
-        // If do not add this, when use our SDK, it will show ERROR: Failed to resolve: :XsensDotSdk:
+        // If do not add this, when use our SDK, it will show ERROR: Failed to resolve: :MovellaDotSdk:
         flatDir {
             dirs "libs"
         }

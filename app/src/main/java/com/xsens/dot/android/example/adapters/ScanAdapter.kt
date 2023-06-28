@@ -43,7 +43,7 @@ import com.xsens.dot.android.example.adapters.ScanAdapter
 import androidx.core.app.ActivityCompat
 import android.content.pm.PackageManager
 import android.view.View
-import com.xsens.dot.android.sdk.models.XsensDotDevice
+import com.xsens.dot.android.sdk.models.DotDevice
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import android.widget.TextView
 import java.util.ArrayList
@@ -79,25 +79,25 @@ class ScanAdapter
             val batteryState = mSensorList[position][KEY_BATTERY_STATE] as Int
             var batteryStr = ""
             if (batteryPercentage != -1) batteryStr = "$batteryPercentage% "
-            if (batteryState == XsensDotDevice.BATT_STATE_CHARGING) batteryStr = batteryStr + mContext.getString(R.string.batt_state_charging)
+            if (batteryState == DotDevice.BATT_STATE_CHARGING) batteryStr = batteryStr + mContext.getString(R.string.batt_state_charging)
             holder.sensorBattery.text = batteryStr
             holder.sensorMacAddress.text = device.address
         }
         val state = mSensorList[position][KEY_CONNECTION_STATE] as Int
         when (state) {
-            XsensDotDevice.CONN_STATE_DISCONNECTED -> {
+            DotDevice.CONN_STATE_DISCONNECTED -> {
                 holder.sensorState.visibility = View.GONE
                 holder.sensorState.text = mContext.resources.getString(R.string.disconnected)
             }
-            XsensDotDevice.CONN_STATE_CONNECTING -> {
+            DotDevice.CONN_STATE_CONNECTING -> {
                 holder.sensorState.visibility = View.VISIBLE
                 holder.sensorState.text = mContext.resources.getString(R.string.connecting)
             }
-            XsensDotDevice.CONN_STATE_CONNECTED -> {
+            DotDevice.CONN_STATE_CONNECTED -> {
                 holder.sensorState.visibility = View.VISIBLE
                 holder.sensorState.text = mContext.resources.getString(R.string.connected)
             }
-            XsensDotDevice.CONN_STATE_RECONNECTING -> {
+            DotDevice.CONN_STATE_RECONNECTING -> {
                 holder.sensorState.visibility = View.VISIBLE
                 holder.sensorState.text = mContext.resources.getString(R.string.reconnecting)
             }
@@ -132,7 +132,7 @@ class ScanAdapter
     fun getConnectionState(position: Int): Int {
         return if (mSensorList != null) {
             mSensorList.get(position).get(KEY_CONNECTION_STATE) as Int
-        } else XsensDotDevice.CONN_STATE_DISCONNECTED
+        } else DotDevice.CONN_STATE_DISCONNECTED
     }
 
     /**

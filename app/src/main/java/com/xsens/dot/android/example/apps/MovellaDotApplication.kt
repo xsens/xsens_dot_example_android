@@ -32,34 +32,33 @@ package com.xsens.dot.android.example.apps
 
 import android.app.Application
 import android.util.Log
-import com.xsens.dot.android.sdk.XsensDotSdk
-import com.xsens.dot.android.example.apps.XsensDotApplication
+import com.xsens.dot.android.sdk.DotSdk
 
 /**
  * A customized application class for basic initialization.
  */
-class XsensDotApplication : Application() {
+class MovellaDotApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        initXsensDotSdk()
+        initMovellaDotSdk()
     }
 
     /**
-     * Setup for Xsens DOT SDK.
+     * Setup for Movella DOT SDK.
      */
-    private fun initXsensDotSdk() {
+    private fun initMovellaDotSdk() {
 
         // Get the version name of SDK.
-        val version = XsensDotSdk.getSdkVersion()
-        Log.i(TAG, "initXsensDotSdk() - version: $version")
+        val version = DotSdk.getSdkVersion()
+        Log.i(TAG, "initMovellaDotSdk() - version: $version")
 
         // Enable this feature to monitor logs from SDK.
-        XsensDotSdk.setDebugEnabled(true)
+        DotSdk.setDebugEnabled(true)
         // Enable this feature then SDK will start reconnection when the connection is lost.
-        XsensDotSdk.setReconnectEnabled(true)
+        DotSdk.setReconnectEnabled(true)
     }
 
     companion object {
-        private val TAG = XsensDotApplication::class.java.simpleName
+        private val TAG = MovellaDotApplication::class.java.simpleName
     }
 }

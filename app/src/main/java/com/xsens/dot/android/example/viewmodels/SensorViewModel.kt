@@ -31,18 +31,18 @@
 package com.xsens.dot.android.example.viewmodels
 
 import androidx.lifecycle.ViewModel
-import com.xsens.dot.android.sdk.interfaces.XsensDotDeviceCallback
+import com.xsens.dot.android.sdk.interfaces.DotDeviceCallback
 import com.xsens.dot.android.example.interfaces.BatteryChangedInterface
 import com.xsens.dot.android.example.interfaces.DataChangeInterface
 import androidx.lifecycle.MutableLiveData
-import com.xsens.dot.android.sdk.models.XsensDotDevice
+import com.xsens.dot.android.sdk.models.DotDevice
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 import android.widget.Toast
 import com.xsens.dot.android.example.viewmodels.SensorViewModel
-import com.xsens.dot.android.sdk.events.XsensDotData
+import com.xsens.dot.android.sdk.events.DotData
 import com.xsens.dot.android.sdk.models.FilterProfileInfo
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.ViewModelProvider
@@ -52,7 +52,7 @@ import java.util.ArrayList
 /**
  * A view model class for notifying data to views and handle logic operations.
  */
-class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
+class SensorViewModel : ViewModel(), DotDeviceCallback {
     // A callback function to notify battery information
     private var mBatteryChangeInterface: BatteryChangedInterface? = null
 
@@ -60,7 +60,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
     private var mDataChangeInterface: DataChangeInterface? = null
 
     // A list contains XsensDotDevice
-    private val mSensorList = MutableLiveData<ArrayList<XsensDotDevice>?>()
+    private val mSensorList = MutableLiveData<ArrayList<DotDevice>?>()
 
     /**
      * Observe this function to listen which device's connection state is changed.
@@ -68,7 +68,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
      * @return The latest updated device
      */
     // A variable to notify the connection state
-    val connectionChangedDevice = MutableLiveData<XsensDotDevice>()
+    val connectionChangedDevice = MutableLiveData<DotDevice>()
 
     /**
      * Observe this function to listen which device's tag name is changed.
@@ -76,7 +76,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
      * @return The latest updated device
      */
     // A variable to notify the tag name
-    val tagChangedDevice = MutableLiveData<XsensDotDevice>()
+    val tagChangedDevice = MutableLiveData<DotDevice>()
 
     // A variable to notify the streaming status
     private val mIsStreaming = MutableLiveData<Boolean?>()
@@ -105,7 +105,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
      * @param address The mac address of device
      * @return The XsensDotDevice object
      */
-    fun getSensor(address: String): XsensDotDevice? {
+    fun getSensor(address: String): DotDevice? {
         val devices = mSensorList.value
         if (devices != null) {
             for (device in devices) {
@@ -120,7 +120,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
      *
      * @return The list contains all devices
      */
-    val allSensors: ArrayList<XsensDotDevice>?
+    val allSensors: ArrayList<DotDevice>?
         get() = if (mSensorList.value == null) ArrayList() else mSensorList.value
 
     /**
@@ -130,7 +130,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
      * @param device  The scanned Bluetooth device
      */
     fun connectSensor(context: Context?, device: BluetoothDevice?) {
-        val xsDevice = XsensDotDevice(context, device, this)
+        val xsDevice = DotDevice(context, device, this)
         addDevice(xsDevice)
         xsDevice.connect()
     }
@@ -157,7 +157,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
     fun disconnectAllSensors() {
         if (mSensorList.value != null) {
             synchronized(LOCKER) {
-                val it: Iterator<XsensDotDevice> = mSensorList.value!!.iterator()
+                val it: Iterator<DotDevice> = mSensorList.value!!.iterator()
                 while (it.hasNext()) {
 
                     // Use Iterator to make sure it's thread safety.
@@ -194,7 +194,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
         if (devices != null) {
             for (device in devices) {
                 val state = device.connectionState
-                if (state != XsensDotDevice.CONN_STATE_CONNECTED) return false
+                if (state != DotDevice.CONN_STATE_CONNECTED) return false
             }
         } else {
             return false
@@ -276,7 +276,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
      *
      * @param xsDevice The XsensDotDevice object
      */
-    private fun addDevice(xsDevice: XsensDotDevice) {
+    private fun addDevice(xsDevice: DotDevice) {
         if (mSensorList.value == null) mSensorList.value = ArrayList()
         val devices = mSensorList.value
         var isExist = false
@@ -342,27 +342,27 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
         mIsStreaming.postValue(status)
     }
 
-    override fun onXsensDotConnectionChanged(address: String, state: Int) {
+    override fun onDotConnectionChanged(address: String, state: Int) {
         Log.i(TAG, "onXsensDotConnectionChanged() - address = $address, state = $state")
         val xsDevice = getSensor(address)
         if (xsDevice != null) connectionChangedDevice.postValue(xsDevice)
         when (state) {
-            XsensDotDevice.CONN_STATE_DISCONNECTED -> synchronized(this) { removeDevice(address) }
-            XsensDotDevice.CONN_STATE_CONNECTING -> {}
-            XsensDotDevice.CONN_STATE_CONNECTED -> {}
-            XsensDotDevice.CONN_STATE_RECONNECTING -> {}
+            DotDevice.CONN_STATE_DISCONNECTED -> synchronized(this) { removeDevice(address) }
+            DotDevice.CONN_STATE_CONNECTING -> {}
+            DotDevice.CONN_STATE_CONNECTED -> {}
+            DotDevice.CONN_STATE_RECONNECTING -> {}
         }
     }
 
-    override fun onXsensDotServicesDiscovered(address: String, status: Int) {
+    override fun onDotServicesDiscovered(address: String, status: Int) {
         Log.i(TAG, "onXsensDotServicesDiscovered() - address = $address, status = $status")
     }
 
-    override fun onXsensDotFirmwareVersionRead(address: String, version: String) {
+    override fun onDotFirmwareVersionRead(address: String, version: String) {
         Log.i(TAG, "onXsensDotFirmwareVersionRead() - address = $address, version = $version")
     }
 
-    override fun onXsensDotTagChanged(address: String, tag: String) {
+    override fun onDotTagChanged(address: String, tag: String) {
         // This callback function will be triggered in the connection precess.
         Log.i(TAG, "onXsensDotTagChanged() - address = $address, tag = $tag")
 
@@ -373,7 +373,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
         }
     }
 
-    override fun onXsensDotBatteryChanged(address: String, status: Int, percentage: Int) {
+    override fun onDotBatteryChanged(address: String, status: Int, percentage: Int) {
         // This callback function will be triggered in the connection precess.
         Log.i(TAG, "onXsensDotBatteryChanged() - address = $address, status = $status, percentage = $percentage")
 
@@ -386,7 +386,7 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
         }
     }
 
-    override fun onXsensDotDataChanged(address: String, data: XsensDotData) {
+    override fun onDotDataChanged(address: String, data: DotData) {
         Log.i(TAG, "onXsensDotDataChanged() - address = $address")
 
         // Don't use LiveData variable to transfer data to activity/fragment.
@@ -394,15 +394,15 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
         if (mDataChangeInterface != null) mDataChangeInterface!!.onDataChanged(address, data)
     }
 
-    override fun onXsensDotInitDone(address: String) {
+    override fun onDotInitDone(address: String) {
         Log.i(TAG, "onXsensDotInitDone() - address = $address")
     }
 
-    override fun onXsensDotButtonClicked(address: String, timestamp: Long) {
+    override fun onDotButtonClicked(address: String, timestamp: Long) {
         Log.i(TAG, "onXsensDotButtonClicked() - address = $address, timestamp = $timestamp")
     }
 
-    override fun onXsensDotPowerSavingTriggered(address: String) {
+    override fun onDotPowerSavingTriggered(address: String) {
         Log.i(TAG, "onXsensDotPowerSavingTriggered() - address = $address")
     }
 
@@ -410,15 +410,15 @@ class SensorViewModel : ViewModel(), XsensDotDeviceCallback {
         Log.i(TAG, "onReadRemoteRssi() - address = $address, rssi = $rssi")
     }
 
-    override fun onXsensDotOutputRateUpdate(address: String, outputRate: Int) {
+    override fun onDotOutputRateUpdate(address: String, outputRate: Int) {
         Log.i(TAG, "onXsensDotOutputRateUpdate() - address = $address, outputRate = $outputRate")
     }
 
-    override fun onXsensDotFilterProfileUpdate(address: String, filterProfileIndex: Int) {
+    override fun onDotFilterProfileUpdate(address: String, filterProfileIndex: Int) {
         Log.i(TAG, "onXsensDotFilterProfileUpdate() - address = $address, filterProfileIndex = $filterProfileIndex")
     }
 
-    override fun onXsensDotGetFilterProfileInfo(address: String, filterProfileInfoList: ArrayList<FilterProfileInfo>) {
+    override fun onDotGetFilterProfileInfo(address: String, filterProfileInfoList: ArrayList<FilterProfileInfo>) {
         Log.i(TAG, "onXsensDotGetFilterProfileInfo() - address = " + address + ", size = " + filterProfileInfoList.size)
     }
 
