@@ -1,13 +1,17 @@
+## NOTE ##
+This example code is compatible with Firmware version **2.4.0 and below and SDK 2023.0.0**. 
+New example codes, compatible with Firmware 3.0.0 and SDK 2023.6.0, will be provided soon.
+
 ## Xsens DOT Example (Android)
 This project is a quickstart for the Xsens DOT SDK on Android.
 
-The [aar library files and programming guide](https://content.xsens.com/xsens-dot-software-development-kit?hsCtaTracking=2af14a41-b15f-4733-b2ca-5498b2888842%7C21941862-cb62-421e-9e0e-2dac04d1ca9f) are packed together for downloads.
+The [aar library files and programming guide](https://www.movella.com/support/software-documentation) are packed together for downloads.
 
-More details: https://www.xsens.com/developer
+More details: [Movella DOT webpage](https://www.movella.com/products/wearables/movella-dot)
 
 **Functions**
 
-Refer to Android programming guide for more explanations of following functions.
+Refer to the Android programming guide for more explanations of the following functions.
 - Scan - Chapter 3.3
 - Connect - Chapter 3.4
 - Synchronization - Chapter 3.7
